@@ -9,7 +9,7 @@
             margin: 0;
             padding: 0;
         }
-        #myCanvas, div{
+        #myCanvas{
             height: 100vh;
             width: 100%;
 
@@ -17,32 +17,18 @@
             background-size: 100% 100%;
             background-position: left top; */
         }
-        
-        div{
-            background: url('https://fastly.picsum.photos/id/559/1500/900.jpg?hmac=AnvaUqloXUu-0AXQdotNWYlKybMrLldnsTQBFLY4ZDQ') no-repeat center center;
-            background-size: 100% 100%;
-            background-position: left top;
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            z-index: 1;
-        }
+    
 
         #myCanvas{
             position: relative;
             z-index: 2;
-            background: rgba(0, 0, 0, 0.5);
         }
         
         
     </style>
 </head>
 <body>
-    <div>
-            
-    </div>
+
 
     <canvas id="myCanvas"></canvas>
 
@@ -55,10 +41,35 @@
     const img = new Image();
     img.src = 'https://fastly.picsum.photos/id/559/1500/900.jpg?hmac=AnvaUqloXUu-0AXQdotNWYlKybMrLldnsTQBFLY4ZDQ'; // Replace with your image URL or path
 
-    canvas.width = canvas.clientWidth; // Set canvas width
-    canvas.height = canvas.clientHeight; // Set canvas height
 
-    function showImg() {
+    img.addEventListener('load', function(){
+        canvas.width = img.width;
+        canvas.height = img.height;
+        createImages();
+    });
+
+    
+    function createImages(imagePart = 6){
+
+        let boxInfo = {
+            x: 0, 
+            y: 0,
+            boxWidth: canvas.clientWidth / imagePart, 
+            boxHeight: canvas.clientHeight / imagePart
+        }
+
+        
+        for(let i= 0; i < imagePart; i++){
+            boxInfo.x = boxInfo.boxWidth * i;
+            for(let j = 0; j < imagePart; j++){
+                boxInfo.y = boxInfo.boxHeight * j;
+                console.log(boxInfo);
+                showImg(boxInfo);
+            }
+        }
+    }
+
+    function showImg({x = 0, y = 0, boxWidth = 200, boxHeight = 200} = {}) {
             // context.drawImage(img, sx, sy, swidth, sheight, x, y, width, height)
             /**
              * img	    Specifies the image, canvas, or video element to use	 
@@ -71,29 +82,26 @@
              * width	Optional. The width of the image to use (stretch or reduce the image)	
              * height	Optional. The height of the image to use (stretch or reduce the image)
             */
-            // ctx.drawImage(img, 100, 50, 100, 100, 0, 0, 100, 200);
+            // ctx.drawImage(img, 0, 0, 100, 100, 0, 0, 2000, 1000);
 
-            canvas.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-            let boxSize = { width: 500, height: 200 };
+            // let imageCalculatedWidth = (boxWidth / canvas.clientWidth) * img.width;
+            // let imageCalculatedHeight = (boxHeight / canvas.clientHeight) * img.height;
 
-            let imageCalculatedWidth = (boxSize.width / canvas.clientWidth) * img.width;
-            let imageCalculatedHeight = (boxSize.height / canvas.clientHeight) * img.height;
+            let imageCalculatedWidth = img.width / 5;
+            let imageCalculatedHeight = img.height / 5;
 
-            let imagePosition = {
-                x: 0,
-                y: 0
-            }
+            // console.log(imageCalculatedWidth, imageCalculatedHeight);
 
             ctx.drawImage(img, 
-            imagePosition.x, imagePosition.y, // sx, sy
+            x, y, // sx, sy
             imageCalculatedWidth, imageCalculatedHeight, // swidth, sheight
-            imagePosition.x, imagePosition.y, // x, y
-            boxSize.width, boxSize.height // width, height
-        );
+            x, y, // x, y
+            boxWidth, boxHeight // width, height
+            );
 
     }
 
-    img.addEventListener('load', showImg);
+
     </script>
 
 </body>
