@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        #myCanvas, div{
+            height: 100vh;
+            width: 100%;
+
+            /* background: url('https://fastly.picsum.photos/id/559/1500/900.jpg?hmac=AnvaUqloXUu-0AXQdotNWYlKybMrLldnsTQBFLY4ZDQ') no-repeat center center;
+            background-size: 100% 100%;
+            background-position: left top; */
+        }
+        
+        div{
+            background: url('https://fastly.picsum.photos/id/559/1500/900.jpg?hmac=AnvaUqloXUu-0AXQdotNWYlKybMrLldnsTQBFLY4ZDQ') no-repeat center center;
+            background-size: 100% 100%;
+            background-position: left top;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+
+        #myCanvas{
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        
+    </style>
+</head>
+<body>
+    <div>
+            
+    </div>
+
+    <canvas id="myCanvas"></canvas>
+
+
+    
+    <script>
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = 'https://fastly.picsum.photos/id/559/1500/900.jpg?hmac=AnvaUqloXUu-0AXQdotNWYlKybMrLldnsTQBFLY4ZDQ'; // Replace with your image URL or path
+
+    canvas.width = canvas.clientWidth; // Set canvas width
+    canvas.height = canvas.clientHeight; // Set canvas height
+
+    function showImg() {
+            // context.drawImage(img, sx, sy, swidth, sheight, x, y, width, height)
+            /**
+             * img	    Specifies the image, canvas, or video element to use	 
+             * sx	    Optional. The x coordinate where to start clipping
+             * sy	    Optional. The y coordinate where to start clipping
+             * swidth	Optional. The width of the clipped image	
+             * sheight	Optional. The height of the clipped image
+             * x	    The x coordinate where to place the image on the canvas	
+             * y	    The y coordinate where to place the image on the canvas	
+             * width	Optional. The width of the image to use (stretch or reduce the image)	
+             * height	Optional. The height of the image to use (stretch or reduce the image)
+            */
+            // ctx.drawImage(img, 100, 50, 100, 100, 0, 0, 100, 200);
+
+            canvas.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            let boxSize = { width: 500, height: 200 };
+
+            let imageCalculatedWidth = (boxSize.width / canvas.clientWidth) * img.width;
+            let imageCalculatedHeight = (boxSize.height / canvas.clientHeight) * img.height;
+
+            let imagePosition = {
+                x: 0,
+                y: 0
+            }
+
+            ctx.drawImage(img, 
+            imagePosition.x, imagePosition.y, // sx, sy
+            imageCalculatedWidth, imageCalculatedHeight, // swidth, sheight
+            imagePosition.x, imagePosition.y, // x, y
+            boxSize.width, boxSize.height // width, height
+        );
+
+    }
+
+    img.addEventListener('load', showImg);
+    </script>
+
+</body>
+</html>
