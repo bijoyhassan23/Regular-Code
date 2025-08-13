@@ -1,0 +1,302 @@
+<!-- Signup Final Page switchup (B) -->
+<!-- Final page body start -->
+<!-- signup-final-step -->
+<script>
+    const getFinalForm = document.querySelector('.final_step_fr');
+    let utmparams = { ...read_cookie("v_latest"), ...read_cookie("from_cookie") };
+    if (!utmparams['utm_source']) utmparams['utm_source'] = "Organic";
+
+
+    // getFrom Filds 1st step
+    const getWorkExperience = getFinalForm.querySelector("#experience");
+    const getDomainRole = getFinalForm.querySelector("#domain-role");
+    const getStartIn = getFinalForm.querySelector("#Start-Interviewing");
+    const getIsStudent = getFinalForm.querySelector("#is_student");
+    const getLaidOff = getFinalForm.querySelector("#laidoff-flag");
+    const webNearAccepTanceSwitchup = getFinalForm.querySelector('.fr_acceptance input#Whatsapp-User-Consent');
+
+    // const getPhoneNumber = getFinalForm.querySelector('.phone_number_fild input#webinar_pnumber');
+
+    // const webNearPhoneNumberWri = window.intlTelInput(getPhoneNumber, {
+    //     initialCountry: "auto",
+    //     geoIpLookup: function (callback) {
+    //         fetch('https://ipinfo.io', { headers: { 'Accept': 'application/json' } })
+    //             .then((resp) => resp.json())
+    //             .then((resp) => { callback(resp.country); })
+    //             .catch(() => callback('in'));
+    //     },
+    //     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+    // });
+    // let phone_regexgql = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+
+
+
+
+    // Step Buttons
+    const StepBtn1 = getFinalForm.querySelector("#step_1_btn");
+
+
+    // Buttons click listener
+    StepBtn1.addEventListener("click", function () {
+        finalFrStep1(this);
+    });
+
+    function getCookieValue(cookieName) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${cookieName}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    const err_temp = {};
+
+    function getPhoneNumberOrDefault() {
+        let fPhoneNumber = utmparams.answer_1;
+        // if (typeof intlTelInputUtils == "undefined") {
+        //     try {
+        //         fPhoneNumber = `+${webNearPhoneNumberWri.getSelectedCountryData().dialCode}${document.querySelector("#webinar_pnumber")?.value}`;
+        //     } catch (error) {
+        //         console.error("Error while getting phone number", error);
+        //         fPhoneNumber = document.querySelector("#webinar_pnumber")?.value;
+        //     }
+        // } else {
+        //     fPhoneNumber = webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164);
+        // }
+        return fPhoneNumber
+    }
+
+    let leadScoreData = {};
+
+    async function sendDataToVisitorTracking(zapData) {
+      //lead LeadCreatedTime
+      const currentDateTime = new Date();
+      const LeadCreatedTime = currentDateTime.toISOString().replace(/T/, ' ').replace(/\.\d+Z$/, ' UTC');
+
+      function formatDateTime(dateTimeString) {
+        const date = new Date(dateTimeString);
+        const year = date.getUTCFullYear();
+        const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+        const day = date.getUTCDate().toString().padStart(2, '0');
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+      }
+
+      const formattedStartDateTime = formatDateTime(utmparams?.event_start_time);
+      const formattedEndDateTime = formatDateTime(utmparams?.event_end_time);
+
+      let data = [{
+        "Lead_Created_Time": LeadCreatedTime,
+        "Lead_Name": utmparams?.invitee_first_name + ' ' + utmparams?.invitee_last_name,
+        "Lead_First_Name": utmparams?.invitee_first_name,
+        "Lead_Last__Name": utmparams?.invitee_last_name,
+        "Lead_Email": utmparams?.invitee_email,
+        "Lead_Time_Zone": webNearInfo.user_timezone,
+        "Event_Start_Date_Time": formattedStartDateTime,
+        "Event_End_Date_Time": formattedEndDateTime,
+        "Mobile": zapData.phone_number_full,
+        "UTM_Campaign": webNearInfo.utm_campaign,
+        "UTM_Source": webNearInfo.utm_source,
+        "UTM_Medium": webNearInfo.utm_medium,
+        "UTM_Term": webNearInfo.utm_term,
+        "UTM_Content": webNearInfo.utm_content,
+        "User_ID": visitor_id,
+        "Page_URL": encodeURIComponent(webNearInfo.page_url),
+        "Country": webNearInfo.v_country,
+        "Client_Timezone": webNearInfo.user_timezone,
+        "CTA_Page": encodeURIComponent(webNearInfo.cta_page_url),
+        "Landing_Page": encodeURIComponent(webNearInfo.l_page_url),
+        "Webinar_reg_type": "",
+        "UUID": webNearInfo.salesforce_uuid,
+        "Click_History": "",
+        "City": webNearInfo.wr__city,
+        "Device": webNearInfo.wr__device,
+        "User_Agent": encodeURIComponent(navigator?.userAgent || ""),
+        "Refferer": encodeURIComponent(webNearInfo.wr__referrer),
+        "Region": webNearInfo.wr__region,
+        "whatsapp_user_consent": zapData.whatsAppUserConsent,
+        "step": "gql_1"
+      }];
+
+      let options = {
+        method: 'POST',
+        headers: {
+          'x-api-key': 'fm0X61U99b80d5SlGjrxFaWjgxIBylhX3LkfYGPN',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dataset_id: "Marketing_data_new_logic",
+          table_id: "Leads_Click_history",
+          data: data,
+        }),
+      };
+
+      try {
+        const response = await fetch('https://nlhtyrnugl.execute-api.us-west-1.amazonaws.com/prod', options);
+        return response;
+      } catch (err) {
+        console.error(err);
+      };
+    }
+
+    // First step
+    function finalFrStep1(btn) {
+        let errorStatus = false;
+        btn.disabled = !errorStatus;
+        // check conditions
+        if (!getWorkExperience.value) {
+            errorStatus = true;
+            errorFun(".exp_fild", errorStatus);
+            if (!err_temp.exp_fild) {
+                err_temp.exp_fild = errorStatus;
+                getWorkExperience.addEventListener("input", function () {
+                    errorFun(".exp_fild", false);
+                })
+            }
+        }
+
+        if (!getDomainRole.value) {
+            errorStatus = true;
+            errorFun(".domain_role_fild", errorStatus);
+            if (!err_temp.domain_role_fild) {
+                err_temp.domain_role_fild = errorStatus;
+                getDomainRole.addEventListener("input", function () {
+                    errorFun(".domain_role_fild", false);
+                })
+            }
+        }
+
+        if (!getStartIn.value) {
+            errorStatus = true;
+            errorFun(".start_interviewing_fild", errorStatus);
+            if (!err_temp.start_interviewing_fild) {
+                err_temp.start_interviewing_fild = errorStatus;
+                getStartIn.addEventListener("input", function () {
+                    errorFun(".start_interviewing_fild", false);
+                })
+            }
+        }
+
+        // if (!phone_regexgql.test(getPhoneNumber.value) || getPhoneNumber.value.length == 0) {
+        //     errorStatus = true;
+        //     errorFun(".phone_number_fild", errorStatus);
+        //     if (!err_temp.phone_number_fild) {
+        //         err_temp.phone_number_fild = errorStatus;
+        //         getStartIn.addEventListener("input", function () {
+        //             errorFun(".phone_number_fild", false);
+        //         })
+        //     }
+        // }
+        btn.disabled = !errorStatus;
+        if (!errorStatus) {
+            let params = [];
+            try {
+                params = read_cookie?.("v_latest") || getParams?.()
+            } catch (error) {
+                console.error("Error while reading cookie", error);
+            }
+            const fbcFromCookies = getCookieValue('_fbc');
+            const fbp = getCookieValue('_fbp');
+            const userAgent = navigator?.userAgent;
+            const fbclid = decodeURIComponent(params['fbclid'] || "");
+            let fbc = fbcFromCookies;
+            if (!fbcFromCookies && fbclid) {
+                // Generate fbc from fbclid
+                const domainParts = window.location.hostname.split('.');
+                const subdomainIndex = domainParts.length - 1;
+                const creationTime = Date.now();
+                fbc = `fb.${subdomainIndex}.${creationTime}.${fbclid}`;
+            }
+            let whatsAppUserConsentValue = "";
+            const fr_acceptance = document.querySelector(".fr_acceptance");
+            if (fr_acceptance && getComputedStyle(fr_acceptance).display === "none") {
+                whatsAppUserConsentValue = "";
+            } else if (webNearAccepTanceSwitchup) {
+                whatsAppUserConsentValue = webNearAccepTanceSwitchup.checked ? "Yes" : "No";
+            }
+            let GQLformData = {
+                'First Name': decodeURIComponent(utmparams['invitee_first_name'] || ""),
+                'Last Name': decodeURIComponent(utmparams['invitee_last_name'] || ""),
+                'Email Address': decodeURIComponent(utmparams['invitee_email'] || ""),
+                whatsAppUserConsent: whatsAppUserConsentValue,
+                utm_source: decodeURIComponent(utmparams['utm_source'] || ""),
+                utm_medium: decodeURIComponent(utmparams['utm_medium'] || ""),
+                utm_campaign: decodeURIComponent(utmparams['utm_campaign'] || ""),
+                utm_term: decodeURIComponent(utmparams['utm_term'] || ""),
+                gclid: decodeURIComponent(utmparams['gclid'] || ""),
+                msclkid: decodeURIComponent(utmparams['msclkid'] || ""),
+                fbclid: fbclid,
+                fbpId: fbp || null,
+                fbcId: fbc || null,
+                user_agent: userAgent || '',
+                user_id: visitor_id,
+                user_timezone: v_timezone,
+                v_country: v_country,
+                // phone_number_full: webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164),
+                phone_number_full: getPhoneNumberOrDefault(),
+                'Event Start Time': decodeURIComponent(utmparams['event_start_time'] || ""),
+                'Event End Time': decodeURIComponent(utmparams['event_end_time'] || ""),
+                'Work Experience': getWorkExperience.value,
+                'Role Domain': getDomainRole.value,
+                // 'PA Consult Time': "",
+                // 'PA Consult Time Other': "",
+                'Future Plan': getStartIn.value,
+                'Laid Off': getLaidOff.checked,
+                'Is Student': getIsStudent.checked,
+                // 'Domain Switch': '',
+                salesforce_uuid: decodeURIComponent(utmparams['salesforce_uuid'] || ""),
+                GA_event_id: Date.now(),
+            };
+
+            try {
+                dataLayer.push({
+                    event: "wordpress_form_submitted",
+                    formName: "Lead Qualifier Form",
+                    event_id: GQLformData.GA_event_id,
+                })
+            } catch (err) {
+              track("gql-e", "reporting-data-layer");
+              console.error(err);
+            }
+
+            sendRequestZapiar(
+              "https://hooks.zapier.com/hooks/catch/11068981/34cx4dp/",
+              GQLformData,
+              function () { track("gql", "Success in gql step"); },
+              function () { track("gql-e", "flow-general"); }
+            );
+            sendDataToVisitorTracking(GQLformData)
+        } else {
+          track("gql-e", "validation-general");
+        }
+    }
+
+    // send request fun
+    async function sendRequestZapiar(url, data, successTrackCallback = null, failTrackCallback = null) {
+        let options = {
+            method: 'POST',
+            mode: "no-cors",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        };
+
+        try {
+            let response = await fetch(url, options);
+            getFinalForm.setAttribute("active_step", 4);
+            if (typeof successTrackCallback === 'function') successTrackCallback();
+        } catch {
+            console.error("sendRequestZapiar", err);
+            if (failTrackCallback) failTrackCallback();
+        }
+    }
+
+    function errorFun(targetTedClass, status = false) {
+        getFinalForm.querySelector(targetTedClass).setAttribute("err_status", status);
+    }
+
+
+
+</script>
+<!-- Final page body end -->
