@@ -249,7 +249,7 @@
 
         //check regex
         let name_regex2 = new RegExp("^[a-zA-Z ]+$");
-        let email_regex2 =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
+        let email_regex2 = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
         let phone_regex2 = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
 
         // getlocation json
@@ -466,7 +466,7 @@
                 track("info-e", "validation-name");
                 return;
             } 
-						 else if (fullname.length > 31) {
+							else if (fullname.length > 31) {
 								const errMsgElement = getFnErrMsg2.querySelector(".err_fild");
 								getFnErrMsg2.setAttribute("err_status", true); 
 								errMsgElement.innerHTML = `<b>ⓘ</b> Full Name cannot exceed 31 characters.`; 
@@ -687,6 +687,7 @@
                     dataLayer.push({
                         event: "wordpress_form_submitted",
                         formName: "Lead Qualifier Form",
+												page_category: "l10x",
                         event_id: GQLformData.GA_event_id,
                     })
                 } catch (err) {

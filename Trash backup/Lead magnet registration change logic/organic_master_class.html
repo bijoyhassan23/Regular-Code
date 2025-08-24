@@ -1,11 +1,6 @@
 <!-- Masterclass Recording -->
 <script>
-  let procide5Step = [
-    "build-ai-agents-from-scratch-v2",
-    "build-ai-agents-from-scratch-v1"
-  ];
-  procide5Step = procide5Step.reduce((prev, curr) => prev || location.pathname.includes(curr), false);
- 
+  let procide5Step = true;
   document.addEventListener("webNearLoaded", () => {
     selectedSlotSet()
   });
@@ -92,38 +87,38 @@
         });
 
         let slotInner = `
-                    <input type="radio" 
-                    name="v2_slot" 
-                    class="v2_slot_radio"
-                    value="${slot.start_time}"
-                    data-endtime="${slot.end_time}" 
-                    data-invitee_starttime="${slot.invitee_start_time}" 
-                    data-invitee_endtime="${slot.invitee_end_time}" 
-                    data-name="${slot.start_time}" 
-                    data-webinar_lead_type="${slot.webinar_lead_type}" 
-                    ${index === 0 ? "checked" : ""}
-                    slot-index="${index}" >
-                    <div class="time_slot_wrapper">
-                        <div class="v2_day">${startTime.toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3).toUpperCase()}</div>
-                        <div class="v2_date">${startTime.getDate()}</div>
-                        <hr>
-                        <div class="v2_time">${formattedStartTime}</div>
-                    </div>
-  
-            `;
+                  <input type="radio" 
+                  name="v2_slot" 
+                  class="v2_slot_radio"
+                  value="${slot.start_time}"
+                  data-endtime="${slot.end_time}" 
+                  data-invitee_starttime="${slot.invitee_start_time}" 
+                  data-invitee_endtime="${slot.invitee_end_time}" 
+                  data-name="${slot.start_time}" 
+                  data-webinar_lead_type="${slot.webinar_lead_type}" 
+                  ${index === 0 ? "checked" : ""}
+                  slot-index="${index}" >
+                  <div class="time_slot_wrapper">
+                      <div class="v2_day">${startTime.toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3).toUpperCase()}</div>
+                      <div class="v2_date">${startTime.getDate()}</div>
+                      <hr>
+                      <div class="v2_time">${formattedStartTime}</div>
+                  </div>
+
+          `;
 
         if (index === 0) {
           slotInner += `
-                    <div class="v2_timer_alart" alart_type="warning">
-                        Filling fast
-                    </div>
-                `;
+                  <div class="v2_timer_alart" alart_type="warning">
+                      Filling fast
+                  </div>
+              `;
         } else if (slot.weekday === "Saturday") {
           slotInner += `
-                    <div class="v2_timer_alart" alart_type="danger">
-                        Almost full
-                    </div>
-                `;
+                  <div class="v2_timer_alart" alart_type="danger">
+                      Almost full
+                  </div>
+              `;
         }
 
         createWebniarSlot.innerHTML = slotInner;
@@ -161,7 +156,7 @@
     document.querySelector(".v2_from_wrapper2 .time_zone").innerHTML = `Time Zone: ${v_timezone}`;
 
     // Check the Button text
-    if (window.location.href.includes("/event/build-ai-agents-from-scratch")) {
+    if (true) {
       const checkboxWrapper = getThePopupFrom2.querySelector('.fr_acceptance');
       if (checkboxWrapper) {
         checkboxWrapper.style.display = "none";
@@ -218,7 +213,7 @@
       userAgent: "",
       li_fat_id: "",
       user_timezone: "",
-      l_page_url: window?.LANDING_PAGE_URL ? LANDING_PAGE_URL :  "",
+      l_page_url: "",
       cta_page_url: "",
       webinar_type: webinarType,//TODO: get this from wp
       eventname: "",
@@ -240,7 +235,7 @@
 
     //check regex
     let name_regex2 = new RegExp("^[a-zA-Z ]+$");
-    let email_regex2 =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
+    let email_regex2 = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
     let phone_regex2 = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
 
     // getlocation json
@@ -306,12 +301,12 @@
 
       webNearInfo2.user_id = visitor_id;
       webNearInfo2.user_timezone = v_timezone;
-      if ((referrer || '') != "" && webNearInfo2.l_page_url == "") {
-        webNearInfo2.l_page_url = "learn.ik/" + (referrer || '').split("/").pop();
+      if ((referrer || '') != "") {
+        webNearInfo2.l_page_url = "ik/" + (referrer || '').split("/").pop();
       } else {
-        webNearInfo2.l_page_url = "learn.ik/" + page_url.split("/").pop();
+        webNearInfo2.l_page_url = "ik/" + page_url.split("/").pop();
       }
-      webNearInfo2.cta_page_url = "learn.ik" + cta_lp;
+      webNearInfo2.cta_page_url = "ik" + cta_lp;
       webNearInfo2.webinar_type = webinarType;//TODO: get this from wp
       webNearInfo2.eventname = eventName;
       webNearInfo2.wr__referrer = referrer;
@@ -448,18 +443,19 @@
         getPhErrMsg2.setAttribute('err_status', true);
         track("info-e", "validation-general");
         return;
-      }else if (fullname.length > 31) {
-        const errMsgElement = getFnErrMsg2.querySelector(".err_fild");
-        getFnErrMsg2.setAttribute("err_status", true);
-        errMsgElement.innerHTML = `<b>ⓘ</b> Full Name cannot exceed 31 characters.`;
-        track("info-e", "validation-name-length");
-        return;
-      }
-			else if (!name_regex2.test(fullname) || fullname.length == 0) {
+      } else if (!name_regex2.test(fullname) || fullname.length == 0) {
         getFnErrMsg2.setAttribute('err_status', true);
         track("info-e", "validation-name");
         return;
-      } else if (!email_regex2.test(wEmail) || wEmail.length == 0) {
+      } 
+		else if (fullname.length > 31) {
+				const errMsgElement = getFnErrMsg2.querySelector(".err_fild");
+				getFnErrMsg2.setAttribute("err_status", true); 
+				errMsgElement.innerHTML = `<b>ⓘ</b> Full Name cannot exceed 31 characters.`; 
+				track("info-e", "validation-name-length"); 
+				return;
+		}
+			else if (!email_regex2.test(wEmail) || wEmail.length == 0) {
         getEmErrMsg2.setAttribute('err_status', true);
         track("info-e", "validation-email");
         return;
@@ -503,16 +499,21 @@
         }
 
         // This is diff zap. please do not reuse for regular webinar. this is specifically for masterclass
-        let zapUrl = v_country === "India" ? "https://hooks.zapier.com/hooks/catch/11068981/27cwi2a/" : "https://hooks.zapier.com/hooks/catch/11068981/2x8y2sx/";
+        let zapUrl = "https://hooks.zapier.com/hooks/catch/11068981/27cwi2a";
         try {
           document.querySelector(".first_name_loader span").innerHTML = webNearInfo2.firstName;
         } catch (err) {
           console.log(err)
         }
 
-        if (window.location.href.includes("/event/build-ai-agents-from-scratch")) {
+        if (true) {
           pushToEndPoint2(zapUrl).then(() => {
             track("info");
+            // try {
+            //   fromSend2ndStep2();
+            // } catch (error) {
+            //   track("slot-e", "flow-zapier");
+            // }
             getThePopupFrom2.setAttribute("active_step", 3);
           }).catch(() => {
             track("info-e", "flow-zapier");
@@ -543,7 +544,7 @@
       const getCheckWebnear = document.querySelector(".register_time");
 
       let utmm = visitor_id + ":" + webNearInfo2.v_country;
-      let sf_uuid = v_timezone + ":learn.ik" + cta_lp + ":learn.ik" + getCookie("ik-landingpage");
+      let sf_uuid = v_timezone + ":ik" + cta_lp + ":ik" + getCookie("ik-landingpage");
       webNearInfo2.salesforce_uuid = sf_uuid;
       let utmstring = {
         assigned_to: "Interview Kickstart",
@@ -560,8 +561,13 @@
 
       bake_cookie("from_cookie", utmstring);
 
-      let pushUrl = "https://hooks.zapier.com/hooks/catch/11068981/2jsjwui/";
+      // let pushUrl = v_country === "India" ? "https://hooks.zapier.com/hooks/catch/11068981/340hl1a/" : "https://hooks.zapier.com/hooks/catch/11068981/340hl1a/";
+      //let pushUrl = v_country === "India" ? "" : "";
+      let pushUrl = "https://hooks.zapier.com/hooks/catch/11068981/34cq9f8/";
       pushToEndPoint2(pushUrl);
+      // if (v_country === "India") {
+      //     pushToEndPoint2(pushUrl);
+      // }
       new Promise((res) => res())
         .then(() => {
           getThePopupFrom2.setAttribute("active_step", 3);
@@ -582,7 +588,6 @@
     const errWorkEx = getThePopupFrom2.querySelector('.v2_exp_fild');
     const errDomEx = getThePopupFrom2.querySelector('.v2_dom_fild');
     const errInEx = getThePopupFrom2.querySelector('.v2_int_fild');
-
 
     getWorkExperience.addEventListener('change', function () {
       errWorkEx.setAttribute('err_status', false);
@@ -656,7 +661,7 @@
           "webinar_type": webinarType,//TODO: get this from wp
           'event_start_time': webNearInfo2.eventStartTime,
           "CTA_Page": encodeURIComponent(webNearInfo2?.cta_page_url || ""),
-					"lead_magnet": leadMagnet,
+						"lead_magnet": leadMagnet,
           GA_event_id: Date.now(),
         };
 
@@ -665,6 +670,7 @@
           dataLayer.push({
             event: "wordpress_form_submitted",
             formName: "Lead Qualifier Form",
+						page_category: "l10x",
             event_id: GQLformData.GA_event_id,
           })
         } catch (err) {
@@ -699,7 +705,7 @@
 
       try {
         let response = await fetch(url, options);
-        if ((window.location.href.includes("event/build-your-own-instagram-masterclass") || window.location.href.includes("event/build-your-own-instagram-recording") || window.location.href.includes("/event/build-ai-agents-from-scratch")) && !sbFrEx) {
+        if ((window.location.href.includes("event/build-your-own-instagram-masterclass") || window.location.href.includes("event/build-your-own-instagram-recording") || true) && !sbFrEx) {
           document.querySelector(".pr_yr_exp").setAttribute('show_status', true);
         } else {
           document.querySelector(".pr_yr_exp").setAttribute('show_status', false);
@@ -853,15 +859,6 @@
         e.preventDefault();
         e.stopPropagation();
         document.querySelector(".video_container").setAttribute('show_status', true);
-
-// 				let videoPlayer = document.querySelector('.video_container iframe')
-// 				let getVideoUrl = videoPlayer.src;
-
-// 				if(!getVideoUrl.includes('autoplay')){
-// 				const url = new URL(getVideoUrl);
-// 				url.searchParams.set("autoplay", "1");
-// 				videoPlayer.src = url.toString();
-// 				}
       });
 
       const form2Selet = document.querySelector(".v2_from_wrapper2");
@@ -869,6 +866,9 @@
         e.preventDefault();
         e.stopPropagation();
         let selectedSlotNumber = parseInt(form2Selet.querySelector("input:checked").getAttribute("slot-index"));
+        // if(v_country !== "India"){
+        //   pushToEndPoint2("https://hooks.zapier.com/hooks/catch/11068981/340hl1a/" ,3);
+        // }
         selectedSlotSet(selectedSlotNumber);
         fromSend2ndStep2();
         form2Selet.setAttribute("active_step", 3);
