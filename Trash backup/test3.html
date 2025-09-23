@@ -1,0 +1,878 @@
+<!-- india Webinar Registration -->
+<script>
+// if(document.querySelector('.web_near_form_india') && isDualWebinar)
+{
+    let registration_type;
+    let no_of_webinar_slots = 6;
+    let slotFetchedTwice = false;
+    let initialTimezone = v_timezone;
+
+    try {
+        if (typeof (staticSlots) != undefined && staticSlots.length == 0) {
+            slotLoaded(staticSlots, false)
+        }
+    } catch (error) {
+        console.error("Error while loading static slots", error);
+    }
+
+    function populateDualWebinarSlots(slots) {
+    const regularSlotContainer = document.querySelector('.web_near_form_india .regular-slot-container .slot_fild');
+    const switchUpSlotContainer = document.querySelector('.web_near_form_india .switch-slot-container .slot_fild');
+
+    regularSlotContainer.innerHTML = "";
+    switchUpSlotContainer.innerHTML = "";
+    
+    slots.forEach((slot, index) => {
+        let slotWrapper = document.createElement("label");
+        slotWrapper.classList.add("slot");
+
+        let slotInputAndButton = `
+        <input 
+            type="radio" 
+            name="v2_slot" 
+            class="v2_slot_radio" 
+            value="${slot.start_time}" 
+            data-endtime="${slot.end_time}" 
+            data-invitee_starttime="${slot.invitee_start_time}" 
+            data-invitee_endtime="${slot.invitee_end_time}" 
+            data-name="${slot.start_time}" 
+            data-webinar_lead_type="${slot.webinar_lead_type}" 
+            ${index === 0 ? "checked" : ""}
+            data-webinar_type="${slot.webinar_type}"
+            data-event_name="${slot.event_name}"
+            slot-index="${index}"
+        >
+        <div class="time_slot_wrapper">
+            <div class="v2_day">${slot.weekday.slice(0, 3).toUpperCase()}</div>
+            <div class="v2_date">${slot.day}</div> 
+            <hr>
+            <div class="v2_time">${slot.hour}:${slot.minute} ${slot.am_or_pm}</div>
+        </div>
+        `;
+        let slotAlert = ``;
+        if (index === 0) {
+            slotAlert = `<div class="v2_timer_alart" alart_type="danger">
+                Almost full
+            </div>`;
+        } else if (index === slots.length - 1) {
+            slotAlert = `<div class="v2_timer_alart" alart_type="warning">
+                Filling fast
+            </div>`;
+        }
+        slotWrapper.innerHTML = `${slotInputAndButton}${slotAlert}`
+        if(slot.webinar_type == "REGULAR"){
+            regularSlotContainer.appendChild(slotWrapper);
+        } else if(slot.webinar_type == "SWITCH_UP_INDIA") {
+            switchUpSlotContainer.appendChild(slotWrapper);
+        }
+    });
+
+    const slotButtons = document.querySelectorAll('.web_near_form_india .web_dual input[type="radio"]');
+    slotButtons.forEach((radio) => {
+        radio.addEventListener('click', function () {
+            const slotIndex = this.getAttribute('slot-index');
+            const selectedSlot = slots[slotIndex];
+            if (selectedSlot) {
+                webinarType = selectedSlot.webinar_type;
+                eventName = selectedSlot.event_name;
+                webNearInfo.webinar_type = selectedSlot.webinar_type;
+                webNearInfo.webinar_lead_type = selectedSlot.webinar_lead_type;
+                webNearInfo.eventname = selectedSlot.event_name;
+            }
+        });
+    });
+    }
+
+
+    function populateWebinarSlots(resobj) {
+        if (isDualWebinar) {
+        return populateDualWebinarSlots(resobj);
+        }
+        const t_months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        if (resobj.length == 0) {
+            console.error("P0: The Uplevel Webinar Slots API Returned No Data.");
+            registration_type = "calendly";
+        } else {
+            registration_type = "byecalendly";
+        }
+
+        no_of_webinar_slots = (no_of_webinar_slots == undefined) ? 4 : no_of_webinar_slots;
+        let nslots = (resobj.length > no_of_webinar_slots) ? no_of_webinar_slots : resobj.length;
+        var tz = new Date().toString().match(/\((.+)\)/);
+        if (tz[1].includes(" ")) {
+            tz = tz[1]
+                .split(" ")
+                .map(([first]) => first)
+                .join("");
+        }
+
+        const getWebinerSlots = document.querySelector('.web_near_form_india .webnear_regitration_fr_india .fr_stage_2 .web_near_slot');
+        getWebinerSlots.innerHTML = "";
+
+        for (i = 0; i < nslots; i++) {
+            let hdate = resobj[i].weekday + ", " + resobj[i].day + " " + t_months[parseInt(resobj[i].month) - 1] + " " + resobj[i].year + " | " + resobj[i].hour + ":" + resobj[i].minute + " " + resobj[i].am_or_pm;
+
+            let checkStatus = i == 0 ? "checked" : "";
+            let radiohtml = document.createElement('label');
+            radiohtml.innerHTML = `
+            <input type="radio" 
+            name="start-date"
+            value="${resobj[i].start_time}" 
+            data-endtime="${resobj[i].end_time}" 
+            data-invitee_starttime="${resobj[i].invitee_start_time}" 
+            data-invitee_endtime="${resobj[i].invitee_end_time}" 
+            data-name="${resobj[i].start_time}" 
+            data-webinar_lead_type="${resobj[i].webinar_lead_type}"
+            ${checkStatus} 
+            required="required">
+            <span class="text">${hdate} ${tz}</span>
+        `;
+
+            getWebinerSlots.append(radiohtml);
+        }
+    }
+
+    async function fallbackSlots() {
+        if (!slotFetchedTwice) {
+            let initialTimezone = v_timezone;
+            webinarType = "REGULAR";
+            v_timezone = "Asia/Kolkata"
+            loadSlot(v_timezone)
+            slotFetchedTwice = true;
+        } else {
+            v_timezone = initialTimezone;
+            if(isDualWebinar) {
+            staticSlots = generateDualWebinarSlots({ count: 13, country: "IND", targetTimezone: v_timezone });
+            } else {
+            staticSlots = generateWebinarSlots({ count: 13, country: "IND", targetTimezone: v_timezone, webinarType: webinarType });
+            }
+            slotLoaded(staticSlots);
+        }
+    }
+
+    async function slotLoaded(slots, resetTimer = true) {
+        webinarSlots = slots;
+        populateWebinarSlots(slots);
+        resetTimer && TimerHandler(slots, v_timezone);
+        document.dispatchEvent(webNearLoadedEv);
+    }
+
+    async function loadDualWebinarSlots() {
+    let regular_slot_api_url = "https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=IND&program=Backend&timezone=" + v_timezone + "&type=REGULAR";
+    let switch_up_slot_api_url = "https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=IND&program=Backend&timezone=" + v_timezone + "&type=SWITCH_UP_INDIA";
+
+    function fetchSlots(api_url, type) {
+        const option = {
+        method: "GET",
+        headers: {
+            "Authorization": "1Cgx6oYXkOlWkNDn7_tXO",
+        }
+        }
+        let webinarEventName = "AI Edgeup : Rethink Interview-Readiness in 2025";
+        if(type == "SWITCH_UP_INDIA") {
+        webinarEventName = "Switch to ML: Become an ML-powered Tech Pro";
+        }
+
+        return fetch(api_url, option)
+        .then(request => request.json())
+        .then(resobj => {
+            return resobj.map(item => ({ 
+            ...item, 
+            webinar_lead_type: type,
+            webinar_type: type,
+            event_name: webinarEventName,
+            }));
+        });
+    }
+    try {
+        api_status = "on-going";
+        const regularSlotsPromise = fetchSlots(regular_slot_api_url, "REGULAR");
+        const switchUpSlotsPromise = fetchSlots(switch_up_slot_api_url, "SWITCH_UP_INDIA");
+
+        const [regularSlots, switchUpSlots] = await Promise.all([regularSlotsPromise, switchUpSlotsPromise]);
+
+        const switchUpSlotCongig = {
+        0: false, // Skip Sunday
+        1: false, // Skip Monday
+        2: true, // Tuesday
+        3: false, // Wednesday
+        4: true, // Thursday
+        5: false, // Skip Friday
+        6: false, // Skip Saturday
+        }
+
+        const regularSlotCongig = {
+        0: false, // Skip Sunday
+        1: true, // Monday
+        2: false, // Skip Tuesday
+        3: true, // Wednesday
+        4: false, // Skip Thursday
+        5: true, // Friday
+        6: true, // Saturday
+        }
+        // Filter out slots based on the configuration
+        let filteredSwitchUpSlots = switchUpSlots.slice(0, 2).filter(slot => {
+        const slotDate = new Date(slot.start_time);
+        return switchUpSlotCongig[slotDate.getDay()];
+        });
+        let filteredRegularSlots = regularSlots.slice(0, 4).filter(slot => {
+        const slotDate = new Date(slot.start_time);
+        return regularSlotCongig[slotDate.getDay()];
+        });
+
+        if(filteredRegularSlots.length == 0) {
+        filteredRegularSlots = staticSlots.filter(slot => slot.webinar_lead_type === "REGULAR");
+        }
+
+        if(filteredSwitchUpSlots.length == 0) {
+        filteredSwitchUpSlots = staticSlots.filter(slot => slot.webinar_lead_type === "SWITCH_UP_INDIA");
+        }
+    
+        if (filteredRegularSlots.length == 0 && filteredSwitchUpSlots.length == 0) {
+        throw new Error(`P0: The Uplevel Webinar Slots API Returned No Data. (webinarType: both, timezone: ${v_timezone})`);
+        }
+
+        slotLoaded([...filteredRegularSlots, ...filteredSwitchUpSlots]);
+        api_status = "completed";
+    } catch (err) {
+        api_status = "failed";
+        fallbackSlots();
+    }
+    }
+
+    async function loadSlot(c_timezoon = "Asia/Kolkata") {
+        if (isDualWebinar) {
+        return loadDualWebinarSlots();
+        }
+        let api_url = "https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=IND&program=Backend&timezone=" + v_timezone + "&type=" + webinarType;
+
+        const option = {
+            method: "GET",
+            headers: {
+                "Authorization": "1Cgx6oYXkOlWkNDn7_tXO",
+            }
+        }
+        try {
+            api_status = "on-going";
+            const request = await fetch(api_url, option);
+            let resobj = await request.json();
+            resobj = resobj.map(item => ({ ...item, webinar_lead_type: "REGULAR" }));
+            if (resobj.length == 0) {
+                throw new Error(`P0: The Uplevel Webinar Slots API Returned No Data. (webinarType: ${webinarType}, timezone: ${c_timezoon})`);
+            }
+            slotLoaded(resobj);
+            api_status = "completed";
+        } catch (err) {
+            api_status = "failed";
+            fallbackSlots()
+        }
+    }
+    loadSlot();
+
+
+        function track(step, message) {
+    typeof saveFormEventsActivity === 'function' ? saveFormEventsActivity(step, null, null, message) : console.error("saveFormEventsActivity is not a function");
+    }
+    // get all from fild
+    const getThePopupFrom = document.querySelector('.web_near_form_india .webnear_regitration_fr_india');
+        getThePopupFrom.setAttribute("dual_mood", isDualWebinar);
+
+    const webNearFullName = getThePopupFrom.querySelector('.web_full_name input#Full-Name');
+    const webNearEmailAddress = getThePopupFrom.querySelector('.web_em_address input#Email-Address-7');
+    const webNearPhoneNumber = getThePopupFrom.querySelector('.web_phone_number input#webinar_pnumber');
+    const webNearAccepTance = getThePopupFrom.querySelector('.fr_acceptance input#Whatsapp-User-Consent');
+    let webNearSlots = getThePopupFrom.querySelector('.web_near_slot');
+    if(isDualWebinar) {
+    webNearSlots = getThePopupFrom.querySelector(".web_dual");
+    }
+
+    const webNearPhoneNumberWri = window.intlTelInput(webNearPhoneNumber, {
+        initialCountry: "auto",
+        geoIpLookup: function (callback) {
+            fetch('https://ipinfo.io', { headers: { 'Accept': 'application/json' } })
+                .then((resp) => resp.json())
+                .then((resp) => { callback(resp.country); })
+                .catch(() => callback('in'));
+        },
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+    });
+
+    const getFnErrMsg = getThePopupFrom.querySelector('.web_full_name');
+    const getEmErrMsg = getThePopupFrom.querySelector('.web_em_address');
+    const getPhErrMsg = getThePopupFrom.querySelector('.web_phone_number');
+
+    // name container
+    webNearInfo = {
+        firstName: "",
+        lastName: "",
+        fPhoneNumber: "",
+        whatsAppUserConsent: "Yes",
+        utm_source: "Organic",
+        utm_medium: "",
+        utm_campaign: "",
+        utm_adset: "",
+        utm_content: "",
+        utm_term: "",
+        page_url: window.location.href,
+        site_url: window.location.hostname,
+        user_id: "",
+        gclid: "",
+        salesforce_uuid: "",
+        msclkid: "",
+        fbclid: "",
+        fbcId: null,
+        fbpId: null,
+        userAgent: "",
+        li_fat_id: "",
+        user_timezone: "",
+        l_page_url: window?.LANDING_PAGE_URL ? LANDING_PAGE_URL :  "",
+        cta_page_url: "",
+        webinar_type: "",
+        eventname: "",
+        wr__referrer: "",
+        wr__device: "",
+        webinar_lead_type: "",
+        bye_calendly_type: "",
+        is_exit_intent_popup: "",
+        v_country: "",
+        wr__region: "",
+        wr__city: "",
+
+        eventStartTime: "",
+        eventEndTime: "",
+        inviteStartTime: "",
+        inviteEndTime: "",
+        booking_id: ""
+    };
+
+    //check regex
+    let name_regex = new RegExp("^[a-zA-Z ]+$");
+    let email_regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
+    let phone_regex = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+
+
+    // getlocation json
+    (async function () {
+        let response = await fetch("https://get.geojs.io/v1/ip/geo.json");
+        let data = await response.json();
+        webNearInfo.v_country = data.country;
+        webNearInfo.wr__region = data.region;
+        webNearInfo.wr__city = data.city;
+    })();
+
+    function getParams(t) { var t = t ? t.split("?")[1] : window.location.search.slice(1), r = {}; if (t) for (var s = (t = t.split("#")[0]).split("&"), e = 0; e < s.length; e++) { var a, n = s[e].split("="), i = n[0], o = void 0 === n[1] ? void 0 : n[1]; (i = i.toLowerCase()).match(/\[(\d+)?\]$/) ? (r[a = i.replace(/\[(\d+)?\]/, "")] || (r[a] = []), i.match(/\[\d+\]$/) ? (n = /\[(\d+)\]/.exec(i)[1], r[a][n] = o) : r[a].push(o)) : r[i] ? ("string" == typeof r[i] && (r[i] = [r[i]]), r[i].push(o)) : r[i] = o } return r }
+    function getCookieValue(cookieName) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${cookieName}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    try {
+    document.querySelectorAll('.web_near_form_india #Whatsapp-User-Consent').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            this.setAttribute("data-click-id", "whatsapp-user-consent-checked");
+        } else {
+            this.setAttribute("data-click-id", "whatsapp-user-consent-unchecked");
+        }
+        });
+    });
+    } catch (error) {
+    console.error("Error while adding event listener to webNearAccepTance", error); 
+    }
+
+
+    function setHiddenFields() {
+        // let params = read_cookie("v_latest");
+        let params = [];
+        try {
+            params = read_cookie("v_latest") || getParams()
+            bake_cookie("v_latest", params);
+        } catch (error) {
+            console.error("Error while reading cookie", error);
+        }
+        const fbcFromCookies = getCookieValue('_fbc');
+        const fbp = getCookieValue('_fbp');
+        const userAgent = navigator?.userAgent;
+        const fbclid = decodeURIComponent(params['fbclid'] || "");
+        let fbc = fbcFromCookies;
+        if (!fbcFromCookies && fbclid) {
+            // Generate fbc from fbclid
+            const domainParts = window.location.hostname.split('.');
+            const subdomainIndex = domainParts.length - 1;
+            const creationTime = Date.now();
+            fbc = `fb.${subdomainIndex}.${creationTime}.${fbclid}`;
+        }
+        let whatsAppUserConsentValue = "";
+        const fr_acceptance = document.querySelector(".web_near_form_india .fr_acceptance");
+        if (fr_acceptance && getComputedStyle(fr_acceptance).display === "none") {
+            whatsAppUserConsentValue = "";
+        } else if (webNearAccepTance) {
+        whatsAppUserConsentValue = webNearAccepTance.checked ? "Yes" : "No";
+        webNearAccepTance.addEventListener('change', function() {
+            if (this.checked) {
+            webNearInfo.whatsAppUserConsent = 'Yes';
+            } else {
+            webNearInfo.whatsAppUserConsent = 'No';
+            }
+        });
+        }
+        webNearInfo.whatsAppUserConsent = whatsAppUserConsentValue;
+        webNearInfo.utm_source = decodeURIComponent(params['utm_source'] || "Organic");
+        webNearInfo.utm_medium = decodeURIComponent(params['utm_medium'] || "");
+        webNearInfo.utm_campaign = decodeURIComponent(params['utm_campaign'] || "");
+        webNearInfo.utm_content = decodeURIComponent(params['utm_content'] || "");
+        webNearInfo.utm_term = decodeURIComponent(params['utm_term'] || "");
+        webNearInfo.utm_adset = decodeURIComponent(params['utm_adset'] || "");
+        webNearInfo.gclid = decodeURIComponent(params['utm_term'] || "");
+        webNearInfo.salesforce_uuid = decodeURIComponent(params['salesforce_uuid'] || "");
+        webNearInfo.msclkid = decodeURIComponent(params['msclkid'] || "");
+        webNearInfo.fbclid = fbclid;
+        webNearInfo.fbcId = fbc || null;
+        webNearInfo.fbpId = fbp || null;
+        webNearInfo.userAgent = userAgent,
+            webNearInfo.li_fat_id = decodeURIComponent(params['li_fat_id'] || "");
+
+        webNearInfo.user_id = visitor_id;
+        webNearInfo.user_timezone = v_timezone;
+        webNearInfo.l_page_url = window?.LANDING_PAGE_URL ? LANDING_PAGE_URL :  "",
+        webNearInfo.cta_page_url = "in.ik.com" + cta_lp;
+        webNearInfo.webinar_type = webinarType;
+        webNearInfo.eventname = eventName;
+        webNearInfo.wr__referrer = referrer;
+        webNearInfo.wr__device = getDeviceType();
+
+        document.querySelector('.web_near_form_india .webinar__lightbox-title h2').innerHTML = eventName;
+
+        webNearInfo.webinar_lead_type = webinarType;
+        webNearInfo.bye_calendly_type = "";
+        webNearInfo.is_exit_intent_popup = "";
+    }
+    setHiddenFields();
+    // set Hidden fild end ---------------------------------------------------------
+
+    // Push Data end point fun
+    async function pushToEndPoint(endpoint) {
+        let getCheckWebnear = webNearSlots.querySelector('input:checked');
+        webNearInfo.eventStartTime = getCheckWebnear ? getCheckWebnear.value : "";
+        webNearInfo.eventEndTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-endtime') : "";
+        webNearInfo.inviteStartTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-invitee_starttime') : "";
+        webNearInfo.inviteEndTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-invitee_endtime') : "";
+        webNearInfo.emailAddress = webNearEmailAddress.value;
+
+        let formData = {
+            "First Name": webNearInfo.firstName,
+            "whatsAppUserConsent": webNearInfo.whatsAppUserConsent,
+            "Last Name": webNearInfo.lastName,
+            "Email Address": webNearEmailAddress.value,
+            "ByeCalendlyType": webNearInfo.bye_calendly_type,
+            "webinar-type": webNearInfo.webinar_type,
+            "Webinar Lead Type": webNearInfo.webinar_lead_type,
+            "utm_source": webNearInfo.utm_source,
+            "utm_medium": webNearInfo.utm_medium,
+            "utm_campaign": webNearInfo.utm_campaign,
+            "utm_content": webNearInfo.utm_content,
+            "utm_adset": webNearInfo.utm_adset,
+            "utm_term": webNearInfo.utm_term,
+            "City": webNearInfo.wr__city,
+            "Device": webNearInfo.wr__device,
+            "Referrer": webNearInfo.wr__referrer,
+            "Region": webNearInfo.wr__region,
+
+            "gclid": webNearInfo.gclid,
+            "msclkid": webNearInfo.msclkid,
+            "fbclid": webNearInfo.fbclid,
+            "fbcId": webNearInfo.fbcId,
+            "fbpId": webNearInfo.fbpId,
+            "user_agent": webNearInfo.userAgent,
+            "user_id": webNearInfo.user_id,
+            "li_fat_id": webNearInfo.li_fat_id,
+
+            "cta_page_url": webNearInfo.cta_page_url,
+            "landing_page_url": webNearInfo.l_page_url,
+            "event_name": webNearInfo.eventname,
+            "user_timezone": webNearInfo.user_timezone,
+            "page_url": webNearInfo.page_url,
+            "site_url": webNearInfo.site_url,
+            "v_country": webNearInfo.v_country,
+            "salesforce_uuid": webNearInfo.salesforce_uuid,
+            "phone_number_full": webNearInfo.fPhoneNumber,
+            "is_exit_intent_popup": webNearInfo.is_exit_intent_popup,
+
+            "Event Start Time": getCheckWebnear.value,
+            "Event End Time": getCheckWebnear.getAttribute('data-endtime'),
+            "Invitee Start Time": getCheckWebnear.getAttribute('data-invitee_starttime'),
+            "Invitee End Time": getCheckWebnear.getAttribute('data-invitee_endtime'),
+        };
+
+        let options = {
+            method: 'POST',
+            mode: "no-cors",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        };
+
+        try {
+            const sendData = await fetch(endpoint, options);
+            return sendData;
+        } catch (err) {
+            console.error("P0: The Zapier Webhook Failed.", err);
+        }
+    }
+
+
+    function hideError() {
+        getFnErrMsg.setAttribute('err_status', false);
+        getEmErrMsg.setAttribute('err_status', false);
+        getPhErrMsg.setAttribute('err_status', false);
+    }
+
+    // First Form Submittion
+    function fromSend1stStep() {
+        setHiddenFields();
+        getThePopupFrom.setAttribute("loader_status", true);
+
+        let fullname = webNearFullName.value.trim();
+        let wEmail = webNearEmailAddress.value;
+        let fullPhoneNumber = webNearPhoneNumber.value;
+
+        //Hide errors
+        webNearFullName.addEventListener('input', hideError);
+        webNearEmailAddress.addEventListener('input', hideError);
+        webNearPhoneNumber.addEventListener('input', hideError);
+        webNearFullName.addEventListener('focus', hideError);
+        webNearEmailAddress.addEventListener('focus', hideError);
+        webNearPhoneNumber.addEventListener('focus', hideError);
+
+
+        //Error check
+        if ((fullname.length == 0) && (wEmail.length == 0) && (fullPhoneNumber.length == 0)) {
+            getFnErrMsg.setAttribute('err_status', true);
+            getEmErrMsg.setAttribute('err_status', true);
+            getPhErrMsg.setAttribute('err_status', true);
+            getThePopupFrom.setAttribute("loader_status", false);
+            track("info-e", "validation-general");
+            return;
+        } else if (!name_regex.test(fullname) || fullname.length == 0) {
+            getFnErrMsg.setAttribute('err_status', true);
+            getThePopupFrom.setAttribute("loader_status", false);
+            track("info-e", "validation-name");
+            return;
+        } 
+                else if (fullname.length > 31) {
+                                const errMsgElement = getFnErrMsg?.querySelector(".err_msg");
+                                getFnErrMsg?.setAttribute("err_status", true);
+                                errMsgElement.innerHTML = "Full name cannot exceed 31 characters.";
+                                getThePopupFrom?.setAttribute("loader_status", false); // Reset loader
+                                track("info-e", "validation-name-length");
+                                return;
+                        }
+                    else if (!email_regex.test(wEmail) || wEmail.length == 0) {
+            getEmErrMsg.setAttribute('err_status', true);
+            getThePopupFrom.setAttribute("loader_status", false);
+            track("info-e", "validation-email");
+            return;
+        } else if (!phone_regex.test(fullPhoneNumber) || fullPhoneNumber.length == 0) {
+            getPhErrMsg.setAttribute('err_status', true);
+            getThePopupFrom.setAttribute("loader_status", false);
+            track("info-e", "validation-phone");
+            return;
+        } else {
+
+            if (fullname.substring(0, fullname.indexOf(' ')) == '') {
+                webNearInfo.firstName = fullname.substring(fullname.indexOf(' ') + 1);
+                webNearInfo.lastName = fullname.substring(fullname.indexOf(' ') + 1);
+            } else if (fullname.substring(fullname.indexOf(' ') + 1) == '') {
+                webNearInfo.firstName = fullname.substring(0, fullname.indexOf(' '));
+                webNearInfo.lastName = fullname.substring(0, fullname.indexOf(' '));
+            } else {
+                webNearInfo.firstName = fullname.substring(0, fullname.indexOf(' '));
+                webNearInfo.lastName = fullname.substring(fullname.indexOf(' ') + 1);
+            }
+
+            try {
+                dataLayer.push({
+                    'event': 'new_webinar_registration_form_submitted',
+                    'webinar_name': webNearInfo.eventname
+                });
+            } catch (err) {
+                track("info-e", "reporting-data-layer");
+                console.error(err);
+            }
+
+            webNearInfo.fPhoneNumber = "";
+            if (typeof intlTelInputUtils == "undefined") {
+                try {
+                    webNearInfo.fPhoneNumber = `+${webNearPhoneNumberWri.getSelectedCountryData().dialCode}${document.querySelector("#webinar_pnumber")?.value}`;
+                } catch (error) {
+                    console.error("Error while getting phone number", error);
+                    webNearInfo.fPhoneNumber = document.querySelector(".web_near_form_india #webinar_pnumber")?.value;
+                }
+            } else {
+                webNearInfo.fPhoneNumber = webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164);
+            }
+            // webNearInfo.fPhoneNumber = webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164);
+
+            pushToEndPoint("https://hooks.zapier.com/hooks/catch/11068981/34xpbjl/")
+                .then(() => {
+                    getThePopupFrom.setAttribute("ac_step", 2);
+                    getThePopupFrom.setAttribute("loader_status", false);
+                    track("info");
+                }).catch((e) => {
+                    track("info-e", "flow-general");
+                });
+        }
+    }
+
+    // Second Form Submition
+    function fromSend2ndStep() {
+        getThePopupFrom.setAttribute("loader_status", true);
+
+        const getCheckWebnear = webNearSlots.querySelector('input:checked');
+
+        let utmm = visitor_id + ":" + webNearInfo.v_country;
+        let sf_uuid = v_timezone + ":in.ik" + cta_lp + ":in.ik" + getCookie("ik-landingpage");
+
+        let utmstring = {
+            assigned_to: "Interview Kickstart",
+            invitee_first_name: webNearInfo.firstName,
+            invitee_last_name: webNearInfo.lastName,
+            invitee_email: webNearEmailAddress.value,
+            answer_1: webNearInfo.fPhoneNumber,
+            event_start_time: getCheckWebnear.value,
+            event_end_time: getCheckWebnear.getAttribute('data-endtime'),
+            utm_medium: utmm,
+            salesforce_uuid: sf_uuid,
+            whatsapp_consent: true,
+            phoneNumCountry: webNearPhoneNumberWri?.j || "",
+            phonerNumber: webNearPhoneNumber.value
+        };
+
+        let finalurl = "/signup-final-step-v6";
+        if(isDualWebinar){
+        if(getCheckWebnear.getAttribute('data-webinar_type') == "SWITCH_UP_INDIA") {
+            finalurl += "-switchup";
+        }
+        } else {
+        if (location.pathname.startsWith("/applied-generative-ai-for-software-engineers-course") || location.pathname.startsWith("/applied-generative-ai-for-tech-leaders-engineering-managers-course") || location.pathname.startsWith("/applied-generative-ai-for-technical-program-managers-course")) {
+            finalurl += "-switchup";
+        }
+        }
+        pushToEndPoint("https://hooks.zapier.com/hooks/catch/11068981/34xpujj/")
+            .then(() => {
+                track("slot");
+                secondStepSecondRequest(getCheckWebnear)
+                    .then(function () {
+                        utmstring = {
+                            ...utmstring,
+                            leadCreatedTime: LeadCreatedTime,
+                        }
+                        bake_cookie("from_cookie", utmstring);
+                        document.querySelector(".web_near_form_india").setAttribute('gql_status', true);
+                        getThePopupFrom.setAttribute("loader_status", false);
+                        // location.href = finalurl;
+                    }).catch(() => {
+                    track("slot-e", "flow-bq");
+                    });
+            }).catch(() => {
+            track("slot-e", "flow-general");
+            });
+    }
+
+
+    let LeadCreatedTime = null;
+    // second step second request fun
+    async function secondStepSecondRequest(getCheckWebnear) {
+        //lead LeadCreatedTime
+        const currentDateTime = new Date();
+        LeadCreatedTime = currentDateTime.toISOString().replace(/T/, ' ').replace(/\.\d+Z$/, ' UTC');
+
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            const year = date.getUTCFullYear();
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+        }
+
+        const formattedStartDateTime = formatDateTime(getCheckWebnear.value);
+        const formattedEndDateTime = formatDateTime(getCheckWebnear.getAttribute('data-endtime'));
+        
+        let getGqlYoeDropdownABValue = "";
+        if(typeof(getGqlYoeDropdownAB) != "undefined" && getGqlYoeDropdownAB != null){
+            getGqlYoeDropdownABValue = getGqlYoeDropdownAB ? "variant" : "control";
+        }
+
+        let data = [{
+            "Lead_Created_Time": LeadCreatedTime,
+            "Lead_Name": webNearInfo.firstName + ' ' + webNearInfo.lastName,
+            "Lead_First_Name": webNearInfo.firstName,
+            "Lead_Last__Name": webNearInfo.lastName,
+            "Lead_Email": webNearEmailAddress.value,
+            "Lead_Time_Zone": webNearInfo.user_timezone,
+            "Event_Type_Name": eventName,
+            "Event_Start_Date_Time": formattedStartDateTime,
+            "Event_End_Date_Time": formattedEndDateTime,
+            "Cancellation_reason": "",
+            "Mobile": webNearInfo.fPhoneNumber,
+            "UTM_Campaign": webNearInfo.utm_campaign,
+            "UTM_Source": webNearInfo.utm_source,
+            "UTM_Medium": webNearInfo.utm_medium,
+            "UTM_Term": webNearInfo.utm_term,
+            "UTM_Content": webNearInfo.utm_content,
+            "Tracking_ID": "",
+            "User_ID": webNearInfo.user_id,
+            "Page_URL": encodeURIComponent(webNearInfo.page_url),
+            "Country": webNearInfo.v_country,
+            "Client_Timezone": webNearInfo.user_timezone,
+            "CTA_Page": encodeURIComponent(webNearInfo.cta_page_url),
+            "Landing_Page": encodeURIComponent(webNearInfo.l_page_url),
+            "Webinar_reg_type": "",
+            "Webinar_Type": webNearInfo.webinar_type,
+            "Switchup_Lead": webNearInfo.webinar_lead_type,
+            "UUID": webNearInfo.salesforce_uuid,
+            "Click_History": "",
+            "City": webNearInfo.wr__city,
+            "Device": webNearInfo.wr__device,
+            "User_Agent": encodeURIComponent(navigator?.userAgent || ""),
+            "Refferer": encodeURIComponent(webNearInfo.wr__referrer),
+            "Region": webNearInfo.wr__region,
+            "step": "s4",
+            "ab_bucket_json": JSON.stringify({
+            gql_yoe_dropdown_ab: getGqlYoeDropdownABValue,
+            }),
+            "whatsapp_user_consent": webNearInfo.whatsAppUserConsent,
+        }];
+
+        let options = {
+            method: 'POST',
+            headers: {
+                'x-api-key': 'fm0X61U99b80d5SlGjrxFaWjgxIBylhX3LkfYGPN',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                dataset_id: "Marketing_data_new_logic",
+                table_id: "Leads_Click_history",
+                data: data,
+            }),
+        };
+
+        try {
+            const response = await fetch('https://nlhtyrnugl.execute-api.us-west-1.amazonaws.com/prod', options);
+            return response;
+        } catch (err) {
+            console.error(err);
+        };
+    }
+
+
+
+    // get wn from btns
+    const get1stepBtn = getThePopupFrom.querySelector(".step_1_btn");
+    const get2stepfinishBtn = getThePopupFrom.querySelector(".step_2_btn");
+    const getBackBtn = getThePopupFrom.querySelector(".fr_btn_back");
+
+    getBackBtn.addEventListener('click', function () {
+        getThePopupFrom.setAttribute("ac_step", 1);
+    });
+
+    get1stepBtn?.addEventListener('click', () => {
+    try {
+        fromSend1stStep();
+    } catch (error) {
+        saveFormEventsActivity("info-e", null, null, "Error in 1st step");
+    }
+    });
+    get2stepfinishBtn?.addEventListener('click', () => {
+    try {
+        fromSend2ndStep();
+    } catch (error) {
+        saveFormEventsActivity("slot-e", null, null, "Error in 2nd step");
+    }
+    });
+
+
+    function initObservers() {
+        let scrollPosition = 0;
+
+        // Store the observer instance as a singleton
+        if (!window.__observerSingleton) {
+            try {
+                if (window.MutationObserver) {
+                    // Function to handle mutation
+                    function handleMutation(mutations) {
+                        mutations.forEach(function (mutation) {
+                            if (
+                                mutation.type === "attributes" &&
+                                mutation.attributeName === "show_status"
+                            ) {
+                                const target = mutation.target;
+
+                                if (target.classList.contains("web_near_form")) {
+                                    const showStatus = target.getAttribute("show_status");
+
+                                    if (showStatus == "true") {
+                                        scrollPosition = window.scrollY;
+                                        document.body.style.overflow = "hidden";
+                                        document.body.style.position = "fixed";
+                                        document.body.style.top = `-${scrollPosition}px`;
+                                        document.body.style.width = "100%";
+                                    } else {
+                                        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+                                        document.documentElement.style.scrollBehavior = "auto";
+                                        document.body.style.overflow = "";
+                                        document.body.style.position = "";
+                                        document.body.style.top = "";
+                                        window.scrollTo(0, scrollPosition);
+                                        document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Create an observer instance
+                    const observer = new MutationObserver(handleMutation);
+
+                    // Store the observer instance in a global variable
+                    window.__observerSingleton = observer;
+
+                    // Configuration of the observer
+                    const config = { attributes: true, attributeFilter: ["show_status"] };
+
+                    const formClassList = [
+                        ".web_near_form_india .web_near_form",
+                        ".web_near_form_india .data_en_wb"
+                    ]
+                    document.querySelectorAll(formClassList.join(",")).forEach(function (form) {
+                        observer.observe(form, config);
+                    });
+                }
+            } catch (error) {
+                console.error("initObservers", error);
+            }
+        }
+    }
+
+    document?.addEventListener("webNearLoaded", function () {
+        function getDeviceType() {
+            var e = navigator.userAgent;
+            return /mobile/i.test(e) ? "Mobile" : /iPad|Android|Touch/i.test(e) ? "Tablet" : "Desktop"
+        }
+
+        if (getDeviceType() == "Mobile") {
+            initObservers();
+        }
+    });
+
+
+    const getAllDropDropArrows = document.querySelectorAll('.web_near_form_india .select-caret-down-wrapper');
+    for (let eachArraow of getAllDropDropArrows) {
+        eachArraow.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>`;
+    }
+}
+</script>

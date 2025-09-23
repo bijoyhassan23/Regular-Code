@@ -1,0 +1,83 @@
+<script>
+function visitorsCounter({id, publishDate, eventDate}) {
+  if (!(publishDate instanceof Date)) publishDate = new Date(publishDate);
+  if (!(eventDate instanceof Date)) eventDate = new Date(eventDate);
+
+  const now = new Date();
+
+  // Days since publish
+  const daysSincePublish = Math.max(1, Math.floor((now - publishDate) / (1000 * 60 * 60 * 24)));
+
+  // Base visitors = days since publish × random factor
+  let base = daysSincePublish * 20;
+
+  // Add some "event hype" boost if event is near
+  const daysUntilEvent = Math.ceil((eventDate - now) / (1000 * 60 * 60 * 24));
+  if (daysUntilEvent > 0 && daysUntilEvent < 10) {
+    base += (10 - daysUntilEvent) * 50; // closer → more visitors
+  }
+
+  // Add deterministic variation from post id (so each post looks different)
+  const numFromId = parseInt(id.replace(/\D/g, ""), 10) || 1;
+  base += (numFromId % 100) * 5;
+
+  // Final "visitors"
+  return Math.floor(base);
+}
+
+function parseEventDate(str) {
+  const regex = /(\d{1,2})\s+([a-zA-Z]{3}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i;
+  const match = str.match(regex);
+
+  if (!match) return null;
+
+  let [_, day, month, hour, minute, meridian] = match;
+
+  day = parseInt(day, 10);
+  hour = parseInt(hour, 10);
+  minute = parseInt(minute, 10);
+
+  if (meridian.toUpperCase() === "PM" && hour < 12) hour += 12;
+  if (meridian.toUpperCase() === "AM" && hour === 12) hour = 0;
+
+  const monthMap = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+  };
+
+  const monthNum = monthMap[month.toLowerCase()];
+  const year = new Date().getFullYear();
+
+  return new Date(year, monthNum, day, hour, minute);
+}
+
+// Example test
+console.log(visitorsCounter({
+  id: "post-101",
+  publishDate: "2025-07-01",
+  eventDate: "2025-09-01"
+}));
+
+// Apply to elements
+let tDay = new Date();
+
+document.addEventListener("DOMContentLoaded", function(){
+    document.querySelectorAll('.e-loop-item').forEach(el => {
+        let postClass = Array.from(el.classList).find(cls => /^post-\d+$/.test(cls));
+        let eventDate = parseEventDate(el.querySelector(".event_date").innerHTML);
+        el.querySelector('.visitors').textContent = visitorsCounter({
+            id: postClass,
+            publishDate: new Date(el.querySelector("[publish_date]").getAttribute("publish_date")),
+            eventDate: eventDate
+        });
+        if(eventDate <= tDay) el.querySelector('[ev_status]').setAttribute('ev_status', 'ondemand')
+    });
+})
+
+</script>
+
+
+
+<script>
+   
+</script>

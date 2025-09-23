@@ -1,0 +1,1017 @@
+<!-- Webinar Body end -->
+<!-- Organic foot code start -->
+<script>
+
+  let registration_type;
+  let no_of_webinar_slots = 6;
+  let slotFetchedTwice = false;
+  let initnialWebinarType = webinarType;
+  let initialTimezone = v_timezone;
+  try {
+    if (typeof (staticSlots) != undefined && staticSlots.length == 0) {
+      slotLoaded(staticSlots, false)
+    }
+  } catch (error) {
+    console.error("Error: ", error)
+  }
+
+  function populateWebinarSlots(resobj) {
+    const t_months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    if (resobj.length == 0) {
+      console.error("P0: The Uplevel Webinar Slots API Returned No Data.");
+      registration_type = "calendly";
+    } else {
+      registration_type = "byecalendly";
+    }
+
+    no_of_webinar_slots = (no_of_webinar_slots == undefined) ? 4 : no_of_webinar_slots;
+    let nslots = (resobj.length > no_of_webinar_slots) ? no_of_webinar_slots : resobj.length;
+    var tz = new Date().toString().match(/\((.+)\)/);
+    if (tz[1].includes(" ")) {
+      tz = tz[1]
+        .split(" ")
+        .map(([first]) => first)
+        .join("");
+    }
+
+    const getWebinerSlots = document.querySelector('.webnear_regitration_fr .fr_stage_2 .web_near_slot');
+    getWebinerSlots.innerHTML = "";
+
+    for (i = 0; i < nslots; i++) {
+      let hdate = resobj[i].weekday + ", " + resobj[i].day + " " + t_months[parseInt(resobj[i].month) - 1] + " " + resobj[i].year + " | " + resobj[i].hour + ":" + resobj[i].minute + " " + resobj[i].am_or_pm;
+
+      let checkStatus = i == 0 ? "checked" : "";
+      let radiohtml = document.createElement('label');
+      // radiohtml.innerHTML = `
+      //           <input type="radio" 
+      //           name="start-date"
+      //           value="${resobj[i].start_time}" 
+      //           data-endtime="${resobj[i].end_time}" 
+      //           data-invitee_starttime="${resobj[i].invitee_start_time}" 
+      //           data-invitee_endtime="${resobj[i].invitee_end_time}" 
+      //           data-name="${resobj[i].start_time}" 
+      //           data-webinar_lead_type="${resobj[i].webinar_lead_type}"
+      //           ${checkStatus} 
+      //           required="required">
+      //           <span class="text">${hdate}</span>
+      //       `;
+
+      let slotInner = `
+          <input type="radio" 
+          name="start-date" 
+          class="v2_slot_radio"
+          value="${resobj[i].start_time}"
+          data-endtime="${resobj[i].end_time}" 
+          data-invitee_starttime="${resobj[i].invitee_start_time}" 
+          data-invitee_endtime="${resobj[i].invitee_end_time}" 
+          data-name="${resobj[i].start_time}" 
+          data-webinar_lead_type="${resobj[i].webinar_lead_type}" 
+          ${checkStatus}
+          slot-index="${i}" >
+          <div class="time_slot_wrapper">
+                  <div class="v2_day">${resobj[i].weekday.slice(0, 3).toUpperCase()}</div>
+                  <div class="v2_date">${resobj[i].day}</div>
+                  <hr>
+                  <div class="v2_time">${resobj[i].hour}:${resobj[i].minute} ${resobj[i].am_or_pm}</div>
+          </div>
+      `;
+
+      if (i === 0) {
+              slotInner += `
+                      <div class="v2_timer_alart" alart_type="warning">
+                              Filling fast
+                      </div>
+              `;
+      } else if (resobj[i].weekday === "Saturday") {
+              slotInner += `
+                      <div class="v2_timer_alart" alart_type="danger">
+                              Almost full
+                      </div>
+              `;
+      }
+
+      radiohtml.innerHTML = slotInner;
+      getWebinerSlots.append(radiohtml);
+    }
+
+    document.querySelector(".webnear_regitration_fr .time_zone").innerHTML = `*All webinar slots are in the ${v_timezone} timezone`;
+  }
+
+  async function fallbackSlots() {
+    if (!slotFetchedTwice) {
+      let initnialWebinarType = webinarType;
+      let initialTimezone = v_timezone;
+      webinarType = "REGULAR";
+      v_timezone = "America/New_York"
+      loadSlot("USA", v_timezone, function (resobj) {
+        TimerHandler(resobj, v_timezone);
+      });
+      slotFetchedTwice = true;
+    } else {
+      webinarType = initnialWebinarType;
+      v_timezone = initialTimezone;
+      staticSlots = generateWebinarSlots({ count: 13, country: country, targetTimezone: v_timezone, webinarType: webinarType });
+      slotLoaded(staticSlots);
+    }
+  }
+
+  async function slotLoaded(slots, resetTimer = true, callBack, country, c_timezoon) {
+    webinarSlots = slots;
+		v_country_code = country;
+		called_c_timezoon = c_timezoon;
+    document.dispatchEvent(webNearLoadedEv);
+    if (!is_webinar_1o1_eligible) {
+      populateWebinarSlots(slots);
+    }
+
+    if (typeof callBack === "function") {
+      callBack(slots);
+    } else {
+      resetTimer && TimerHandler(slots, v_timezone);
+    }
+  }
+
+  async function loadSlot(country = "USA", c_timezoon = "US/Pacific", callBack) {
+
+    //let api_url = `https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=${country}&program=Backend&timezone=${c_timezoon.replace("+", "%2B")}&type=${webinarType === "SWITCH_UP" ? webinarType : "REGULAR"}`;
+let api_url = `https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=${country}&program=Backend&timezone=${c_timezoon.replace("+", "%2B")}&type=${(webinarType === "SWITCH_UP" || webinarType === "Agentic_AI") ? webinarType : "REGULAR"}`;
+    const option = {
+      method: "GET",
+      headers: {
+        "Authorization": "1Cgx6oYXkOlWkNDn7_tXO",
+      }
+    }
+
+    try {
+      api_status = "on-going";
+      const request = await fetch(api_url, option);
+      let resobj = await request.json();
+      if (resobj.length == 0) {
+        throw new Error("P0: The Uplevel Webinar Slots API Returned No Data.");
+      }
+      resobj = resobj.map(item => ({ ...item, webinar_lead_type: webinarType }));
+      if (resobj.length == 0) {
+        throw new Error(`P0: The Uplevel Webinar Slots API Returned No Data. (webinarType: ${webinarType}, timezone: ${c_timezoon}, country: ${country})`);
+      }
+      slotLoaded(resobj, true, callBack, country, c_timezoon);
+      api_status = "completed";
+    } catch (err) {
+      api_status = "failed";
+      fallbackSlots()
+    }
+  }
+
+  getGeo().then((geo) => {
+    if (geo.country_code3 == "IND" && currentURlPrms["forceuswebinar"] == undefined) {
+      loadSlot("IND", geo.timezone, function (resobj) {
+        TimerHandler(resobj, "Asia/Kolkata");
+      });
+    } else if (currentURlPrms["forceuswebinar"] == "true") {
+      loadSlot("USA", "US/Pacific", function (resobj) {
+        TimerHandler(resobj, "America/New_York");
+      });
+    } else {
+      loadSlot("USA", geo.timezone, function (resobj) {
+        if (typeof (v_timezone) != "undefined") {
+          TimerHandler(resobj, v_timezone);
+        } else {
+          TimerHandler(resobj, "America/New_York");
+        }
+
+      });
+    }
+  }).catch(() => {
+    loadSlot("USA", "US/Pacific", function (resobj) {
+      TimerHandler(resobj, "America/New_York");
+    });
+  })
+
+
+  async function getGeo() {
+    let response = await fetch("https://get.geojs.io/v1/ip/geo.json");
+    let data = await response.json();
+    return data;
+  }
+
+</script>
+<!------------------ Webnear Form Send ---------------------->
+<script>
+  function track(step, message) {
+    typeof saveFormEventsActivity === 'function' ? saveFormEventsActivity(step, null, null, message) : console.error("saveFormEventsActivity is not a function");
+  }
+  // get all from fild
+  const getThePopupFrom = document.querySelector('.webnear_regitration_fr');
+
+  const webNearFirstName = getThePopupFrom.querySelector('.web_first_name input#first-name');
+  const webNearLastName = getThePopupFrom.querySelector('.web_first_last_name input#last-name');
+  const webNearEmailAddress = getThePopupFrom.querySelector('.web_em_address input#Email-Address-7');
+  const webNearAccepTance = getThePopupFrom.querySelector('.fr_acceptance input#Whatsapp-User-Consent');
+  const webNearSlots = getThePopupFrom.querySelector('.web_near_slot');
+
+  const webNearPhoneNumberPopup = getThePopupFrom?.querySelector('.web_phone_number input#webinar_pnumber_popup');
+  const webNearPhoneNumberWriPopup = window.intlTelInput(webNearPhoneNumberPopup, {
+      initialCountry: "auto",
+      geoIpLookup: function (callback) {
+          fetch('https://ipinfo.io', { headers: { 'Accept': 'application/json' } })
+              .then((resp) => resp.json())
+              .then((resp) => { callback(resp.country); })
+              .catch(() => callback('in'));
+      },
+      utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+  });
+
+  
+  const getFiErrMsg = getThePopupFrom.querySelector('.web_first_name');
+  const getLaErrMsg = getThePopupFrom.querySelector('.web_first_last_name');
+  const getEmErrMsg = getThePopupFrom.querySelector('.web_em_address');
+  const getPhErrMsg = getThePopupFrom.querySelector('.web_phone_number');
+
+
+  // name container
+  let webNearInfo = {
+    firstName: "",
+    lastName: "",
+    whatsAppUserConsent: "Yes",
+    fPhoneNumber: "",
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_adset: "",
+    utm_content: "",
+    utm_term: "",
+    page_url: page_url,
+    site_url: window.location.hostname,
+    user_id: "",
+    gclid: "",
+    salesforce_uuid: "",
+    msclkid: "",
+    fbclid: "",
+    fbcId: null,
+    fbpId: null,
+    userAgent: "",
+    li_fat_id: "",
+    user_timezone: "",
+    l_page_url: window?.LANDING_PAGE_URL ? LANDING_PAGE_URL :  "",
+    cta_page_url: "",
+    webinar_type: "",
+    eventname: "",
+    wr__referrer: "",
+    wr__device: "",
+    webinar_lead_type: "",
+    bye_calendly_type: "",
+    is_exit_intent_popup: "",
+    v_country: "",
+    wr__region: "",
+    wr__city: "",
+    irclickid: "",
+
+    eventStartTime: "",
+    eventEndTime: "",
+    inviteStartTime: "",
+    inviteEndTime: "",
+    booking_id: ""
+  };
+
+  //check regex
+  let name_regex = new RegExp("^[a-zA-Z ]+$");
+  //let email_regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+  let email_regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
+  let phone_regex = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+
+
+  // getlocation json
+  (async function () {
+    let response = await fetch("https://get.geojs.io/v1/ip/geo.json");
+    let data = await response.json();
+    webNearInfo.v_country = data.country;
+    webNearInfo.wr__region = data.region;
+    webNearInfo.wr__city = data.city;
+  })();
+  function getCookieValue(cookieName) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${cookieName}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  try {
+    document.querySelectorAll('#Whatsapp-User-Consent').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          this.setAttribute("data-click-id", "whatsapp-user-consent-checked");
+        } else {
+          this.setAttribute("data-click-id", "whatsapp-user-consent-unchecked");
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Error while adding event listener to webNearAccepTance", error); 
+  }
+
+  function getParams(t) { var t = t ? t.split("?")[1] : window.location.search.slice(1), r = {}; if (t) for (var s = (t = t.split("#")[0]).split("&"), e = 0; e < s.length; e++) { var a, n = s[e].split("="), i = n[0], o = void 0 === n[1] ? void 0 : n[1]; (i = i.toLowerCase()).match(/\[(\d+)?\]$/) ? (r[a = i.replace(/\[(\d+)?\]/, "")] || (r[a] = []), i.match(/\[\d+\]$/) ? (n = /\[(\d+)\]/.exec(i)[1], r[a][n] = o) : r[a].push(o)) : r[i] ? ("string" == typeof r[i] && (r[i] = [r[i]]), r[i].push(o)) : r[i] = o } return r }
+
+  function setHiddenFields() {
+    //  let params = read_cookie("v_latest");
+    let params = [];
+    try {
+      params = read_cookie("v_latest") || getParams()
+      bake_cookie("v_latest", params);
+    } catch (error) {
+      console.error("Error while reading cookie", error);
+    }
+    const fbcFromCookies = getCookieValue('_fbc');
+    const fbp = getCookieValue('_fbp');
+    const userAgent = navigator?.userAgent;
+    const fbclid = decodeURIComponent(params['fbclid'] || "");
+    let fbc = fbcFromCookies;
+    if (!fbcFromCookies && fbclid) {
+      // Generate fbc from fbclid
+      const domainParts = window.location.hostname.split('.');
+      const subdomainIndex = domainParts.length - 1;
+      const creationTime = Date.now();
+      fbc = `fb.${subdomainIndex}.${creationTime}.${fbclid}`;
+    }
+    let whatsAppUserConsentValue = "";
+    const fr_acceptance = document.querySelector(".fr_acceptance");
+    if (fr_acceptance && getComputedStyle(fr_acceptance).display === "none") {
+      whatsAppUserConsentValue = "";
+    } else if (webNearAccepTance) {
+      whatsAppUserConsentValue = webNearAccepTance.checked ? "Yes" : "No";
+      webNearAccepTance.addEventListener('change', function() {
+        if (this.checked) {
+          webNearInfo.whatsAppUserConsent = 'Yes';
+        } else {
+          webNearInfo.whatsAppUserConsent = 'No';
+        }
+      });
+    }
+    webNearInfo.whatsAppUserConsent = whatsAppUserConsentValue;
+    webNearInfo.utm_source = decodeURIComponent(params['utm_source'] || "Organic");
+    webNearInfo.utm_medium = decodeURIComponent(params['utm_medium'] || `${visitor_id}${getCookie("_ga")}:${v_country}`);
+    webNearInfo.utm_campaign = decodeURIComponent(params['utm_campaign'] || "");
+    webNearInfo.utm_content = decodeURIComponent(params['utm_content'] || "");
+    webNearInfo.utm_term = decodeURIComponent(params['utm_term'] || "");
+    webNearInfo.utm_adset = decodeURIComponent(params['utm_adset'] || "");
+    webNearInfo.gclid = decodeURIComponent(params['gclid'] || "");
+    webNearInfo.salesforce_uuid = decodeURIComponent(params['salesforce_uuid'] || "");
+    webNearInfo.msclkid = decodeURIComponent(params['msclkid'] || "");
+    webNearInfo.fbclid = fbclid;
+    webNearInfo.fbcId = fbc || null;
+    webNearInfo.fbpId = fbp || null;
+    webNearInfo.userAgent = userAgent,
+      webNearInfo.li_fat_id = decodeURIComponent(params['li_fat_id'] || "");
+
+    webNearInfo.user_id = visitor_id;
+    webNearInfo.user_timezone = v_timezone;
+    webNearInfo.l_page_url = window?.LANDING_PAGE_URL ? LANDING_PAGE_URL :  "";
+    webNearInfo.cta_page_url = "ik.com" + cta_lp;
+    webNearInfo.webinar_type = webinarType;
+    webNearInfo.eventname = eventName;
+    webNearInfo.wr__referrer = referrer;
+    webNearInfo.wr__device = getDeviceType();
+
+    try {
+      document.querySelector('.webinar__lightbox-title h2').innerHTML = eventName;
+    } catch (error) {
+      document.querySelector('.webinar__lightbox-title h3').innerHTML = eventName;
+    }
+
+    webNearInfo.webinar_lead_type = webinarType;
+    webNearInfo.bye_calendly_type = "NoPhoneInTheFirstStep";
+    webNearInfo.is_exit_intent_popup = "No";
+
+    webNearInfo.irclickid = decodeURIComponent(params['irclickid'] || "");
+  }
+  setHiddenFields();
+  // set Hidden fild end ---------------------------------------------------------
+
+
+  // Push Data end point fun
+  async function pushToEndPoint(endpoint) {
+    let getCheckWebnear = webNearSlots.querySelector('input[name="start-date"]:checked');
+    webNearInfo.eventStartTime = getCheckWebnear.value;
+    webNearInfo.eventEndTime = getCheckWebnear.getAttribute('data-endtime');
+    webNearInfo.inviteStartTime = getCheckWebnear.getAttribute('data-invitee_starttime');
+    webNearInfo.inviteEndTime = getCheckWebnear.getAttribute('data-invitee_endtime');
+
+    let formData = {
+      "First Name": webNearInfo.firstName,
+      "Last Name": webNearInfo.lastName,
+      "whatsAppUserConsent": webNearInfo.whatsAppUserConsent,
+      "Email Address": webNearEmailAddress.value,
+      "ByeCalendlyType": webNearInfo.bye_calendly_type,
+      "webinar-type": webNearInfo.webinar_type,
+      "Webinar Lead Type": webNearInfo.webinar_lead_type,
+      "utm_source": webNearInfo.utm_source,
+      "utm_medium": webNearInfo.utm_medium,
+      "utm_campaign": webNearInfo.utm_campaign,
+      "utm_content": webNearInfo.utm_content,
+      "utm_adset": webNearInfo.utm_adset,
+      "utm_term": webNearInfo.utm_term,
+
+      "City": webNearInfo.wr__city,
+      "Device": webNearInfo.wr__device,
+      "Referrer": webNearInfo.wr__referrer,
+      "Region": webNearInfo.wr__region,
+
+      "gclid": webNearInfo.gclid,
+      "msclkid": webNearInfo.msclkid,
+      "fbclid": webNearInfo.fbclid,
+      "fbpId": webNearInfo.fbpId,
+      "fbcId": webNearInfo.fbcId,
+      "user_agent": webNearInfo.userAgent,
+      "user_id": webNearInfo.user_id,
+      "li_fat_id": webNearInfo.li_fat_id,
+
+      "cta_page_url": webNearInfo.cta_page_url,
+      "landing_page_url": webNearInfo.l_page_url,
+      "event_name": webNearInfo.eventname,
+      "user_timezone": webNearInfo.user_timezone,
+      "page_url": webNearInfo.page_url,
+      "site_url": webNearInfo.site_url,
+      "v_country": webNearInfo.v_country,
+      "salesforce_uuid": webNearInfo.salesforce_uuid,
+      "phone_number_full": webNearInfo.fPhoneNumber,
+      "is_exit_intent_popup": webNearInfo.is_exit_intent_popup,
+      "irclickid": webNearInfo.irclickid,
+
+      "Event Start Time": webNearInfo.eventStartTime,
+      "Event End Time": webNearInfo.eventEndTime,
+      "Invitee Start Time": webNearInfo.inviteStartTime,
+      "Invitee End Time": webNearInfo.inviteEndTime,
+      "expertInsightABValue": typeof expertInsightABValue !== "undefined" ? expertInsightABValue : "",
+    };
+
+
+    try {
+      formData["ipAddress"] = userIpAndBrowserInfo.ipAddress;
+      formData["browserName"] = userIpAndBrowserInfo.browserName;
+      formData["browserVersion"] = userIpAndBrowserInfo.browserVersion;
+    } catch (err) {
+      formData["browserName"] = "";
+      formData["browserVersion"] = "";
+      formData["ipAddress"] = "";
+    }
+    if (is_webinar_1o1_eligible) formData["Booking id"] = webNearInfo.booking_id;
+
+    let options = {
+      method: 'POST',
+      mode: "no-cors",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    };
+
+    try {
+      const sendData = await fetch(endpoint, options);
+      return sendData;
+    } catch (err) {
+      console.error("P0: The Zapier Webhook Failed.", err);
+    }
+  }
+
+
+  function hideError() {
+    getEmErrMsg.setAttribute('err_status', false);
+    getFiErrMsg.setAttribute('err_status', false);
+    getLaErrMsg.setAttribute('err_status', false);
+    getPhErrMsg.setAttribute('err_status', false);
+  }
+
+
+  function getPhoneNumberOrDefaultPopup() {
+      let fPhoneNumber = "";
+      if (typeof intlTelInputUtils == "undefined") {
+          try {
+              fPhoneNumber = `+${webNearPhoneNumberWriPopup.getSelectedCountryData().dialCode}${webNearPhoneNumberPopup?.value}`;
+          } catch (error) {
+              console.error("Error while getting phone number", error);
+              fPhoneNumber = webNearPhoneNumberPopup?.value;
+          }
+      } else {
+          fPhoneNumber = webNearPhoneNumberWriPopup.getNumber(intlTelInputUtils.numberFormat.E164);
+      }
+      return fPhoneNumber
+  }
+
+  // First Form Submittion
+  function fromSend1stStep() {
+    setHiddenFields();
+    getThePopupFrom.setAttribute("loader_status", true);
+
+    let f_name = webNearFirstName.value.trim();
+    let l_name = webNearLastName.value.trim();
+    let wEmail = webNearEmailAddress.value;
+    let fullPhoneNumber = webNearPhoneNumberPopup.value;
+    
+    //Hide errors
+    webNearFirstName.addEventListener('input', hideError);
+    webNearLastName.addEventListener('input', hideError);
+    webNearEmailAddress.addEventListener('input', hideError);
+    webNearFirstName.addEventListener('focus', hideError);
+    webNearLastName.addEventListener('focus', hideError);
+    webNearEmailAddress.addEventListener('focus', hideError);
+
+
+    //Error check
+    if ((f_name.length == 0) && (l_name.length == 0) && (wEmail.length == 0) && (fullPhoneNumber.length == 0)) {
+      getEmErrMsg.setAttribute('err_status', true);
+      getFiErrMsg.setAttribute('err_status', true);
+      getLaErrMsg.setAttribute('err_status', true);
+      getPhErrMsg.setAttribute('err_status', true);
+      getThePopupFrom.setAttribute("loader_status", false);
+      track("info-e", "validation-general");
+      return;
+    } else if (!name_regex.test(f_name) || f_name.length == 0) {
+      getFiErrMsg.setAttribute('err_status', true);
+      getThePopupFrom.setAttribute("loader_status", false);
+      track("info-e", "validation-fname");
+      return;
+    } else if (f_name.length > 31) {
+ 			const errMsgElement = getFiErrMsg.querySelector('.err_msg'); 
+        getFiErrMsg.setAttribute('err_status', true);
+        errMsgElement.innerHTML = "First name cannot exceed 31 characters.";
+        getThePopupFrom.setAttribute("loader_status", false);
+        track("info-e", "validation-fname-length");
+        return;
+    } else if (!name_regex.test(l_name) || l_name.length == 0) {
+      getLaErrMsg.setAttribute('err_status', true);
+      getThePopupFrom.setAttribute("loader_status", false);
+      track("info-e", "validation-lname");
+      return;
+    } else if (l_name.length > 31) {
+				const errMsgElement = getLaErrMsg.querySelector('.err_msg'); 
+        getLaErrMsg.setAttribute('err_status', true);
+        errMsgElement.innerHTML = "Last name cannot exceed 31 characters.";
+        getThePopupFrom.setAttribute("loader_status", false);
+        track("info-e", "validation-lname-length");
+        return;
+    } else if (!email_regex.test(wEmail) || wEmail.length == 0) {
+      getEmErrMsg.setAttribute('err_status', true);
+      getThePopupFrom.setAttribute("loader_status", false);
+      track("info-e", "validation-email");
+      return;
+    } else if (!phone_regex.test(fullPhoneNumber) || fullPhoneNumber.length == 0) {
+      getPhErrMsg.setAttribute('err_status', true);
+      getThePopupFrom.setAttribute("loader_status", false);
+      track("info-e", "validation-phone");
+      return;
+    } else {
+
+      webNearInfo.firstName = f_name;
+      webNearInfo.lastName = l_name;
+      webNearInfo.fPhoneNumber = getPhoneNumberOrDefaultPopup();
+      try {
+        dataLayer.push({
+          'event': 'new_webinar_registration_form_submitted',
+          'webinar_name': webNearInfo.eventname
+        });
+      } catch (err) {
+        track("info-e", "reporting-data-layer");
+        console.error(err);
+      }
+
+      pushToEndPoint("https://hooks.zapier.com/hooks/catch/11068981/34c9jjz/")
+        .then(() => {
+          getThePopupFrom.setAttribute("ac_step", 2);
+          getThePopupFrom.setAttribute("loader_status", false);
+          track("info");
+        }).catch(() => {
+          track("info-e", "flow-general");
+        });
+    }
+  }
+
+  // Second Form Submition
+  function fromSend2ndStep() {
+    getThePopupFrom.setAttribute("loader_status", true);
+
+    const getCheckWebnear = webNearSlots.querySelector('input[name="start-date"]:checked');
+
+    let utmm = `${visitor_id}${getCookie("_ga")}:${v_country}`;
+    let sf_uuid = v_timezone + ":ik.com" + cta_lp + ":ik.com" + getCookie("ik-landingpage");
+
+    let utmstring = {
+      assigned_to: "Interview Kickstart",
+      invitee_first_name: webNearInfo.firstName,
+      invitee_last_name: webNearInfo.lastName,
+      invitee_email: webNearEmailAddress.value,
+      answer_1: webNearInfo.fPhoneNumber,
+      event_start_time: getCheckWebnear.value,
+      event_end_time: getCheckWebnear.getAttribute('data-endtime'),
+      utm_medium: utmm,
+      salesforce_uuid: sf_uuid,
+      whatsapp_consent: true
+    };
+
+    bake_cookie("from_cookie", utmstring);
+
+    try {
+      dataLayer.push({
+        event: "wordpress_form_submitted",
+        formName: "Webinar Slot Selection",
+        'webinar_name': webNearInfo.eventname
+      });
+    } catch (err) {
+      track("slot-e", "reporting-data-layer");
+      console.error(err);
+    }
+
+    let finalurl = webinarType === "SWITCH_UP" ? "/signup-final-step-switchup-v6" : "/signup-final-step-v6";
+    let pushUrl = is_webinar_1o1_eligible ? "https://hooks.zapier.com/hooks/catch/11068981/2dvppke/" : "https://hooks.zapier.com/hooks/catch/11068981/34cq9f8/";
+
+
+    function secondZapPushFun() {
+      pushToEndPoint(pushUrl)
+        .then(() => {
+          track("slot");
+          secondStepSecondRequest(getCheckWebnear)
+            .then(function () {
+              if (window?.shouldShowExpertInsight()) {
+                getWebNearForm.setAttribute('gql_status', true);
+                return;
+              }
+              location.href = finalurl;
+
+            }).catch(function () {
+              track("slot-e", "flow-bq");
+            });
+        }).catch(() => {
+          track("slot-e", "flow-general");
+        });
+    }
+
+    if (is_webinar_1o1_eligible) {
+      bookSlot(webNearEmailAddress.value, getCheckWebnear.getAttribute('slot_id')).then(function (data) {
+        if (data.booking_id) webNearInfo.booking_id = data.booking_id;
+        secondZapPushFun();
+      }).catch((e) => {
+        console.error("Error in booking slot", e);
+        track("slot-e", "flow-one-on-one");
+      });
+    } else {
+      secondZapPushFun();
+    }
+  }
+
+
+  // second step second request fun
+  async function secondStepSecondRequest(getCheckWebnear) {
+    //lead LeadCreatedTime
+    const currentDateTime = new Date();
+    const LeadCreatedTime = currentDateTime.toISOString().replace(/T/, ' ').replace(/\.\d+Z$/, ' UTC');
+
+    function formatDateTime(dateTimeString) {
+      const date = new Date(dateTimeString);
+      const year = date.getUTCFullYear();
+      const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = date.getUTCDate().toString().padStart(2, '0');
+      const hours = date.getUTCHours().toString().padStart(2, '0');
+      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+      const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+    }
+
+    const formattedStartDateTime = formatDateTime(getCheckWebnear.value);
+    const formattedEndDateTime = formatDateTime(getCheckWebnear.getAttribute('data-endtime'));
+
+    let data = [{
+      "Lead_Created_Time": LeadCreatedTime,
+      "Lead_Name": webNearInfo.firstName + ' ' + webNearInfo.lastName,
+      "Lead_First_Name": webNearInfo.firstName,
+      "Lead_Last__Name": webNearInfo.lastName,
+      "Lead_Email": webNearEmailAddress.value,
+      "Lead_Time_Zone": webNearInfo.user_timezone,
+      "Event_Type_Name": eventName,
+      "Event_Start_Date_Time": formattedStartDateTime,
+      "Event_End_Date_Time": formattedEndDateTime,
+      "Cancellation_reason": "",
+      "Mobile": webNearInfo.fPhoneNumber,
+      "UTM_Campaign": webNearInfo.utm_campaign,
+      "UTM_Source": webNearInfo.utm_source,
+      "UTM_Medium": webNearInfo.utm_medium,
+      "UTM_Term": webNearInfo.utm_term,
+      "UTM_Content": webNearInfo.utm_content,
+      "Tracking_ID": "",
+      "User_ID": webNearInfo.user_id,
+      "Page_URL": encodeURIComponent(webNearInfo.page_url),
+      "Country": webNearInfo.v_country,
+      "Client_Timezone": webNearInfo.user_timezone,
+      "CTA_Page": encodeURIComponent(webNearInfo.cta_page_url),
+      "Landing_Page": encodeURIComponent(webNearInfo.l_page_url),
+      "Webinar_reg_type": "",
+      "Webinar_Type": webNearInfo.webinar_type,
+      "Switchup_Lead": webNearInfo.webinar_lead_type,
+      "UUID": webNearInfo.salesforce_uuid,
+      "Click_History": "",
+      "City": webNearInfo.wr__city,
+      "Device": webNearInfo.wr__device,
+      "User_Agent": encodeURIComponent(navigator?.userAgent || ""),
+      "Refferer": encodeURIComponent(webNearInfo.wr__referrer),
+      "Region": webNearInfo.wr__region,
+      "whatsapp_user_consent": webNearInfo.whatsAppUserConsent,
+      "step": "s4"
+    }];
+
+    let options = {
+      method: 'POST',
+      headers: {
+        'x-api-key': 'fm0X61U99b80d5SlGjrxFaWjgxIBylhX3LkfYGPN',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dataset_id: "Marketing_data_new_logic",
+        table_id: "Leads_Click_history",
+        data: data,
+      }),
+    };
+
+    try {
+      const response = await fetch('https://nlhtyrnugl.execute-api.us-west-1.amazonaws.com/prod', options);
+      return response;
+    } catch (err) {
+      console.error(err);
+    };
+  }
+
+
+  // get wn from btns
+  const get1stepBtn = getThePopupFrom.querySelector(".step_1_btn");
+  const get2stepfinishBtn = getThePopupFrom.querySelector(".step_2_btn");
+  const getBackBtn = getThePopupFrom.querySelector(".fr_btn_back");
+
+  getBackBtn.addEventListener('click', function () {
+    getThePopupFrom.setAttribute("ac_step", 1);
+  });
+
+  // get1stepBtn.addEventListener('click', fromSend1stStep);
+  get1stepBtn.addEventListener('click', () => {
+    try {
+      fromSend1stStep();
+    } catch (error) {
+      saveFormEventsActivity("info-e", null, null, "Error in 1st step");
+    }
+  });
+  
+  // get2stepfinishBtn.addEventListener('click', fromSend2ndStep);
+  get2stepfinishBtn.addEventListener('click', () => {
+    try {
+      fromSend2ndStep();
+    } catch (error) {
+      saveFormEventsActivity("slot-e", null, null, "Error in 2nd step");
+    }
+  });
+
+
+
+
+  if (is_webinar_1o1_eligible) {
+    function render1o1Slots(resobj) {
+      const getWebiner101Slots = document.querySelector('.webnear_regitration_fr .webiner_101_slots');
+      const get101DateFild = getWebiner101Slots.querySelector('.select_date .date_list');
+      const get101TimeFild = getWebiner101Slots.querySelector('.time_slot .time_list');
+      const get101TimeZoneFild = document.querySelector('.webnear_regitration_fr .time_zone');
+      const month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      get101DateFild.innerHTML = "";
+      let defultSelect = true;
+
+      get101TimeZoneFild.innerHTML = `Time Zone: ${v_timezone}`;
+
+      const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      function convertUTCToLocal(availableSlots) {
+        const localSlots = {};
+
+        for (const date in availableSlots) {
+          for (const time in availableSlots[date]) {
+            const utcDateTime = new Date(`${date}T${time}:00Z`);
+            const localDateTime = new Date(
+              utcDateTime.toLocaleString("en-US", { timeZone: localTimeZone })
+            );
+
+            const localDate = `${localDateTime.getFullYear()}-${(
+              "0" + (localDateTime.getMonth() + 1)
+            ).slice(-2)}-${("0" + localDateTime.getDate()).slice(-2)}`;
+            const localTime = localDateTime
+              .toTimeString()
+              .split(" ")[0]
+              .slice(0, 5);
+
+            if (!localSlots[localDate]) {
+              localSlots[localDate] = {};
+            }
+
+            localSlots[localDate][localTime] = availableSlots[date][time];
+          }
+        }
+
+        return localSlots;
+      }
+
+      resobj = convertUTCToLocal(resobj);
+
+      Object.keys(resobj).sort((a, b) => {
+        const timeA = new Date(`${a}T00:00`).getTime();
+        const timeB = new Date(`${b}T00:00`).getTime();
+        return timeA - timeB;
+      }).forEach(function (date, index) {
+        let datObj = new Date(date + "T00:00:00");
+        let get101Month = month[datObj.getMonth()];
+        let get101Date = datObj.getDate();
+        const dataElement = document.createElement("label");
+        dataElement.innerHTML = `
+                        <span>${get101Month} ${get101Date}</span>
+                        <input type="radio" name="date_fild" ${defultSelect ? "checked" : ""} date="${date}" >
+                    `;
+        get101DateFild.appendChild(dataElement);
+
+        if (defultSelect) {
+          render101Time(date);
+          defultSelect = false;
+        }
+        dataElement.addEventListener("click", function () {
+          render101Time(date);
+        })
+      })
+
+      function render101Time(selectedDate) {
+        get101TimeFild.innerHTML = "";
+        let times = resobj[selectedDate];
+        let defultTimeSelect = true;
+
+        Object.keys(times).sort((a, b) => {
+          const timeA = new Date(`1970-01-01T${a}:00`).getTime();
+          const timeB = new Date(`1970-01-01T${b}:00`).getTime();
+          return timeA - timeB;
+        }).forEach(function (time, index) {
+          const timeElement = document.createElement("label");
+
+          const startDate = new Date(`${selectedDate}T${time}:00`);
+          const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+          const inviteeStartTime =
+            startDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: localTimeZone, // Set the time zone to IST
+            }) +
+            " - " +
+            startDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+              timeZone: localTimeZone, // Set the time zone to IST
+            });
+
+          const inviteeEndTime =
+            endDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: localTimeZone, // Set the time zone to IST
+            }) +
+            " - " +
+            endDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+              timeZone: localTimeZone, // Set the time zone to IST
+            });
+
+          function formatDateWithTimezoneOffset(date) {
+            const timezoneOffset = -date.getTimezoneOffset(); // offset in minutes
+            const diffHours = Math.floor(timezoneOffset / 60);
+            const diffMinutes = timezoneOffset % 60;
+            const sign = diffHours >= 0 ? "+" : "-";
+            const pad = (num) => String(Math.abs(num)).padStart(2, "0");
+            return (
+              date.getFullYear() +
+              "-" +
+              pad(date.getMonth() + 1) +
+              "-" +
+              pad(date.getDate()) +
+              "T" +
+              pad(date.getHours()) +
+              ":" +
+              pad(date.getMinutes()) +
+              ":" +
+              pad(date.getSeconds()) +
+              sign +
+              pad(diffHours) +
+              ":" +
+              pad(diffMinutes)
+            );
+          }
+
+          timeElement.innerHTML = `
+                                <span>${time}</span>
+                                <input type="radio" name="start-date" 
+                                time="${time}" 
+                                slot_id="${times[time]}"
+                                value="${formatDateWithTimezoneOffset(startDate)}"
+                                data-endtime="${formatDateWithTimezoneOffset(endDate)}"
+                                data-invitee_starttime="${inviteeStartTime}"
+                                data-invitee_endtime="${inviteeEndTime}"
+                                ${defultTimeSelect ? "checked" : ""}>
+                        `
+          get101TimeFild.appendChild(timeElement);
+          if (defultTimeSelect) defultTimeSelect = false;
+        })
+      }
+    }
+
+    (async function () {
+      const option = {
+        method: "GET",
+        headers: {
+          "Authorization": "1Cgx6oYXkOlWkNDn7_tXO",
+        }
+      }
+
+      const request = await fetch(`https://${window.location.host.includes("wpcomstaging") ? "uptest" : "uplevel"}.interviewkickstart.com/api/v1/webinar_connect/available-slots/${slotType ? "?slot_type=" + slotType : ""}`, option);
+      let resobj = await request.json();
+      render1o1Slots(resobj);
+    })();
+  }
+
+  function initObservers() {
+    let scrollPosition = 0;
+
+    // Store the observer instance as a singleton
+    if (!window.__observerSingleton) {
+      try {
+        if (window.MutationObserver) {
+          // Function to handle mutation
+          function handleMutation(mutations) {
+            mutations.forEach(function (mutation) {
+              if (
+                mutation.type === "attributes" &&
+                mutation.attributeName === "show_status"
+              ) {
+                const target = mutation.target;
+
+                if (target.classList.contains("web_near_form")) {
+                  const showStatus = target.getAttribute("show_status");
+
+                  if (showStatus == "true") {
+                    scrollPosition = window.scrollY;
+                    document.body.style.overflow = "hidden";
+                    document.body.style.position = "fixed";
+                    document.body.style.top = `-${scrollPosition}px`;
+                    document.body.style.width = "100%";
+                  } else {
+                    const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+                    document.documentElement.style.scrollBehavior = "auto";
+                    document.body.style.overflow = "";
+                    document.body.style.position = "";
+                    document.body.style.top = "";
+                    window.scrollTo(0, scrollPosition);
+                    document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                  }
+                }
+              }
+            });
+          }
+
+          // Create an observer instance
+          const observer = new MutationObserver(handleMutation);
+
+          // Store the observer instance in a global variable
+          window.__observerSingleton = observer;
+
+          // Configuration of the observer
+          const config = { attributes: true, attributeFilter: ["show_status"] };
+
+          const formClassList = [
+            ".web_near_form",
+            ".data_en_wb"
+          ]
+          document.querySelectorAll(formClassList.join(",")).forEach(function (form) {
+            observer.observe(form, config);
+          });
+        }
+      } catch (error) {
+        console.error("initObservers", error);
+      }
+    }
+  }
+
+  document?.addEventListener("webNearLoaded", function () {
+    function getDeviceType() {
+      var e = navigator.userAgent;
+      return /mobile/i.test(e) ? "Mobile" : /iPad|Android|Touch/i.test(e) ? "Tablet" : "Desktop"
+    }
+
+    if (getDeviceType() == "Mobile") {
+      initObservers();
+    }
+  });
+
+  if (!whatsappConsentABTestFlag) {
+    document.querySelectorAll(".fr_acceptance").forEach((button) => {
+      button.style.display = "none";
+    });
+  }
+</script>
+<!-- Organic foot code end -->
