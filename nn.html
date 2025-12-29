@@ -1,0 +1,304 @@
+<!-- PopUp GQL -->
+<script>
+if(window?.shouldShowExpertInsight() !== true){
+  document.querySelectorAll(".step_indicator_4, .selected_time_slot").forEach(item => {
+    item.style.display = "none";
+  })
+}
+	 document.querySelectorAll('.web_near_close').forEach(item => {
+			item.addEventListener('click', function(){
+					getWebNearForm.setAttribute('show_status', false);
+			})
+	})
+
+
+  {
+    const gqlRgPopup = document?.querySelector(".gql_registration_popup");
+
+    // 1st step
+    const gqlWorkExperience = gqlRgPopup?.querySelector("#gql_experience");
+    const gqlDomainRole = gqlRgPopup?.querySelector("#gql_domain_role");
+    const gqlIsStudent = gqlRgPopup?.querySelector("#gql_pp_student_flag");
+    const gqlLaidOff = gqlRgPopup?.querySelector("#gql_pp_laidoff_flag");
+
+    const gqlLinkdinUrl = gqlRgPopup?.querySelector("#gql_linkdin_pr_link");
+    const gqlResume = gqlRgPopup?.querySelector("#gql_get_resume");
+
+    const gqlWrErrDiv = gqlRgPopup?.querySelector(".gql_exp_fild");
+    const gqlDmErrDiv = gqlRgPopup?.querySelector(".gql_domain_role_fild");
+    const gqlLnErrDiv = gqlRgPopup?.querySelector(".gql_link_din_url");
+    const gqlResumeErrDiv = gqlRgPopup?.querySelector(".gql_resume");
+
+    const gqlStartIn = gqlRgPopup?.querySelector("#gql_Start_Interviewing");
+    const gqlStartErrDiv = gqlRgPopup?.querySelector(".gql_start_interviewing_fild");
+
+    if(window.location.pathname.includes('pwc-agentic-ai-bootcamp')){
+      gqlStartErrDiv.querySelector('label .text').innerHTML = 'What is your primary motivation to upskill in Agentic AI?';
+      gqlStartIn.innerHTML = `
+        <option value="">Select option</option>
+        <option value="career_transition">I want to switch my career into AI roles</option>
+        <option value="promotionleadership">I’m aiming for a promotion or leadership role</option>
+        <option value="launching_aidriven_projects">I want to launch or accelerate AI-driven projects</option>
+        <option value="exploring_innovative_tech">Exploring innovative tech</option>
+      `;
+    }
+
+    let gqlResumeBase64String = null;
+
+    let maxSize = 4 * 1024 * 1024;
+    const urlRegex = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,6})(\/[\w.-]*)*\/?$/i;
+
+    gqlResume.addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        gqlRgPopup.querySelector(".up_load_titile").innerHTML = `Selected: ${file.name}`;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+          gqlResumeBase64String = reader.result.split(',')[1];
+        };
+        reader.onerror = function (error) {
+          console.error("Error reading file: ", error);
+        };
+
+        if (maxSize < file.size) {
+          gqlResumeErrDiv.setAttribute("err_status", true);
+        } else {
+          gqlResumeErrDiv.setAttribute("err_status", false);
+        }
+      }
+    });
+
+    gqlLinkdinUrl.addEventListener("input", function () {
+      if (gqlLinkdinUrl.value.trim() === "" || urlRegex.test(gqlLinkdinUrl.value)) {
+        gqlLnErrDiv.setAttribute("err_status", false);
+      } else {
+        gqlLnErrDiv.setAttribute("err_status", true);
+      }
+    })
+
+    function getAPIDetails() {
+      //if url contains wpcomstaging than send staging api key & url
+      if (window.location.href.includes("wpcomstaging")) {
+        return {
+          url: "https://jobxp11m92.execute-api.us-west-1.amazonaws.com/qa/expert-insights",
+          api_key: "Dn6VOF9g4iGtLJLqMBrL2uNWwhfadgl2kXEIvzQ4"
+        }
+      } else {
+        return {
+          url: "https://4nwgymw1h6.execute-api.us-west-1.amazonaws.com/api/expert-insights",
+          api_key: "fBF1GVnYKb1hReCbCfrQu7zBt4RgLOvh6inYzYqB"
+        }
+      }
+    }
+
+    async function pushGqlPopupFromData() {
+      let GqldataPayload = {
+        "Lead_Created_Time": webNearInfo.leadCreatedTime,
+        "Page_URL": encodeURIComponent(webNearInfo.page_url),
+        "First Name": webNearInfo.firstName,
+        "Last Name": webNearInfo.lastName,
+        "Email Address": webNearEmailAddress.value,
+        "utm_source": webNearInfo.utm_source,
+        "utm_medium": webNearInfo.utm_medium,
+        "utm_campaign": webNearInfo.utm_campaign,
+        "utm_term": webNearInfo.utm_term,
+        "gclid": webNearInfo.gclid,
+        "msclkid": webNearInfo.msclkid,
+        "fbclid": webNearInfo.fbclid,
+        "user_id": webNearInfo.user_id,
+        "user_timezone": webNearInfo.user_timezone,
+        "v_country": webNearInfo.v_country,
+        "phone_number_full": webNearInfo.fPhoneNumber,
+        "Event Start Time": webNearInfo.eventStartTime,
+        "Event End Time": webNearInfo.eventEndTime,
+        "Work Experience": gqlWorkExperience.value,
+        "Role Domain": gqlDomainRole.value,
+        "PA Consult Time": "",
+        "PA Consult Time Other": "",
+        "Interview Start Time": !window.location.pathname.includes('pwc-agentic-ai-bootcamp') && customQuestion ? "" : gqlStartIn.value,
+        "Your Motivation": !window.location.pathname.includes('pwc-agentic-ai-bootcamp') && customQuestion ? gqlStartIn.value : "",
+        "Choose Agentic AI": window.location.pathname.includes('pwc-agentic-ai-bootcamp') ? gqlStartIn.value : "",
+        "Laid Off": gqlLaidOff.checked,
+        "Is Student": gqlIsStudent.checked,
+        "Domain Switch": "",
+        "salesforce_uuid": webNearInfo.salesforce_uuid,
+        "linkedin_url": gqlLinkdinUrl.value.trim() || null,
+        "resume": gqlResumeBase64String || null,
+        "slot": gqlRgPopup?.querySelector(".preferred_time_slot:checked").value,
+        "test_group": "B", // will always be B because this code is only for expert insight.
+      }
+
+      let options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': getAPIDetails().api_key },
+        body: JSON.stringify(GqldataPayload),
+      };
+
+      try {
+        const sendData = await fetch(getAPIDetails().url, options); // staging url
+        return sendData;
+      } catch (err) {
+        throw new Error("GQL Faild");
+      }
+    }
+
+    gqlWorkExperience.addEventListener("change", function () {
+      gqlWrErrDiv.setAttribute("err_status", false);
+    })
+
+    gqlDomainRole.addEventListener("change", function () {
+      gqlDmErrDiv.setAttribute("err_status", false);
+    })
+
+    gqlStartIn.addEventListener("change", function () {
+      gqlStartErrDiv.setAttribute("err_status", false);
+    })
+
+    function gqlPopup1stStep() {
+      let err = false;
+      console.log("gqlPopup1stStep called");
+      if (!gqlWorkExperience.value) {
+        err = true;
+        gqlWrErrDiv.setAttribute("err_status", err);
+      }
+
+      if (!gqlDomainRole.value) {
+        err = true;
+        gqlDmErrDiv.setAttribute("err_status", err);
+      }
+
+      if (!gqlStartIn.value) {
+        err = true;
+        gqlStartErrDiv.setAttribute("err_status", err);
+        return;
+      }
+
+      if (!err) {
+        gqlZapSend();
+        if (window?.shouldShowExpertInsight() !== true){
+					document.querySelector("#gql_rg_date").innerHTML = formatDate(new Date(webNearInfo.eventStartTime));
+          getWebNearForm.setAttribute("complete_stauts", true);
+        }else{
+				 gqlRgPopup.setAttribute("ac_step", 2);
+        }
+        
+      }
+    }
+
+    gqlRgPopup?.querySelector(".gql_step_1_btn").addEventListener("click", gqlPopup1stStep);
+    gqlRgPopup?.querySelector(".gql_popup_stage_1 .gql_btn_back").addEventListener("click", function () {
+      getWebNearForm.setAttribute("gql_status", false);
+    });
+
+
+    gqlRgPopup?.querySelector(".gql_step_2_btn").addEventListener("click", function () {
+      if (gqlResumeErrDiv.getAttribute("err_status") === "true" || gqlLnErrDiv.getAttribute("err_status") === "true") return; // validation for resume
+
+      pushGqlPopupFromData();
+      document.querySelector("#gql_rg_date").innerHTML = formatDate(new Date(webNearInfo.eventStartTime));
+      document.querySelector("#gql_rg_time").innerHTML = gqlRgPopup?.querySelector(".preferred_time_slot:checked").value.replace(/\s*\(|\)\s*/g, ", ").replace(/,\s*$/, "");
+      getWebNearForm.setAttribute("complete_stauts", true);
+      saveClickActivity("Gql-form-button_finish");
+    });
+    gqlRgPopup?.querySelector(".gql_popup_stage_2 .gql_btn_back").addEventListener("click", function () {
+      gqlRgPopup.setAttribute("ac_step", 1);
+    });
+
+
+    function formatDate(date) {
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+      let dayName = days[date.getDay()];
+      let day = date.getDate();
+      let month = months[date.getMonth()];
+      let hours = date.getHours();
+      let period = hours >= 12 ? "PM" : "AM";
+
+      // Convert to 12-hour format
+      hours = hours % 12 || 12;
+
+      // Add ordinal suffix (st, nd, rd, th)
+      let suffix = "th";
+      if (day % 10 === 1 && day !== 11) suffix = "st";
+      else if (day % 10 === 2 && day !== 12) suffix = "nd";
+      else if (day % 10 === 3 && day !== 13) suffix = "rd";
+
+      return `${dayName}, ${day}${suffix} ${month}, ${hours} ${period}`;
+    }
+
+
+    async function gqlZapSend() {
+      let fbc = getCookieValue('_fbc');
+      const fbp = getCookieValue('_fbp');
+      const userAgent = navigator?.userAgent;
+      let GQLformData = {
+        'First Name': webNearInfo.firstName,
+        'Last Name': webNearInfo.lastName,
+        'Email Address': webNearEmailAddress.value,
+        utm_source: webNearInfo.utm_source,
+        utm_medium: webNearInfo.utm_medium,
+        utm_campaign: webNearInfo.utm_campaign,
+        utm_term: webNearInfo.utm_term,
+        gclid: webNearInfo.gclid,
+        msclkid: webNearInfo.msclkid,
+        fbclid: webNearInfo.fbclid,
+        fbcId: fbc || null,
+        fbpId: fbp || null,
+        user_agent: userAgent || '',
+        user_id: visitor_id,
+        user_timezone: v_timezone,
+        v_country: v_country,
+        "phone_number_full": webNearInfo.fPhoneNumber,
+        "Event Start Time": webNearInfo.eventStartTime,
+        "Event End Time": webNearInfo.eventEndTime,
+        'Work Experience': gqlWorkExperience.value,
+        "page_url": webNearInfo?.page_url || "",
+        'Role Domain': gqlDomainRole.value,
+        // 'PA Consult Time': "",
+        // 'PA Consult Time Other': "",
+        "Interview Start Time": !window.location.pathname.includes('pwc-agentic-ai-bootcamp') && customQuestion ? "" : gqlStartIn.value,
+        "Your Motivation": !window.location.pathname.includes('pwc-agentic-ai-bootcamp') && customQuestion ? gqlStartIn.value : "",
+        "Choose Agentic AI": window.location.pathname.includes('pwc-agentic-ai-bootcamp') ? gqlStartIn.value : "",
+        'Laid Off': gqlLaidOff.checked,
+        'Is Student': gqlIsStudent.checked,
+        // 'Domain Switch': '',
+        salesforce_uuid: webNearInfo.salesforce_uuid,
+        "GA_event_id": Date.now(),
+      };
+
+      try {
+        dataLayer.push({
+          event: "wordpress_form_submitted",
+          formName: "Lead Qualifier Form",
+          event_id: GQLformData.GA_event_id,
+        })
+      } catch (err) {
+        saveClickActivity("info_and_gql_update-error-in-data-layer-push");
+        console.error("Error in data layer push", err);
+      }
+
+      // Validate payload before sending
+      if (!GQLformData || (typeof GQLformData === 'object' && Object.keys(GQLformData).length === 0) || JSON.stringify(GQLformData) === "{}") {
+        throw new Error("Zapier webhook payload is empty");
+      }
+
+      let options = {
+        method: 'POST',
+        mode: "no-cors",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(GQLformData),
+      };
+
+      try {
+        let response = await fetch("https://hooks.zapier.com/hooks/catch/11068981/34xp8vf/", options);
+        saveFormEventsActivity("gql");
+      } catch (err) {
+        console.error("gqlZapSend", err);
+      }
+    }
+  }
+</script>

@@ -1,0 +1,568 @@
+<script>
+	
+let isSocialLogin = false; 
+let iti; 
+let amountToPay, orderId, stripePublishableKey, clientSecret;
+
+let courseSlug = localStorage.getItem("selectedCourseSlug");
+	if (courseSlug === "1-mock-interview-with-faang-experts") {
+								cohortName = "1 Mock Interview with FAANG+ Experts";
+						} else if (courseSlug === "3-mock-interviews-with-faang-experts") {
+								cohortName = "3 Mock Interviews with FAANG+ Experts";
+						}
+document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentIntent = urlParams.get("payment_intent");
+    const redirectStatus = urlParams.get("redirect_status");
+		const localorderId = localStorage.getItem("payment_order_id");
+    const localamountToPay = parseFloat(localStorage.getItem("payment_amount"));
+    if (paymentIntent && redirectStatus === "succeeded") {
+        hideGoogleLogin();
+        document.querySelector(".success-card-email").style.display = "none";
+        showStep(4);
+        window.history.replaceState({}, document.title, window.location.pathname);
+		
+        // ✅ Google Tag Manager - Purchase Event
+        const purchaseEvent = {
+    event: 'purchase',
+    transaction_id: localorderId,
+    value: localamountToPay,
+    items: [{
+        item_id: courseSlug,
+        item_name: cohortName,
+        price: localamountToPay,
+        quantity: 1
+    }]
+};
+
+// Log the data you're pushing
+console.log("Pushing to dataLayer:", purchaseEvent);
+			// Push to dataLayer
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push(purchaseEvent);
+localStorage.removeItem("payment_order_id");
+localStorage.removeItem("payment_amount");
+    } else {
+        showStep(1);
+    }
+
+    initPhoneInput();
+});
+
+// Function to handle step navigation
+function showStep(step) {
+    document.getElementById("step1").style.display = step === 1 ? "block" : "none";
+    document.getElementById("step2").style.display = step === 2 ? "block" : "none";
+    document.getElementById("step3").style.display = step === 3 ? "block" : "none";
+    document.getElementById("step4").style.display = step === 4 ? "block" : "none";
+	 if (step === 3) {
+        fetchPaymentInfo();
+    }
+}
+
+// Function to initialize intl-tel-input
+function initPhoneInput() {
+    var phoneInput = document.getElementById("phone");
+
+    if (phoneInput) {
+        iti = window.intlTelInput(phoneInput, {
+            initialCountry: "in",
+            separateDialCode: true, 
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+        });
+    }
+}
+	
+function hideGoogleLogin() {
+    let googleLogin = document.querySelector(".google-login");
+    let divider = document.querySelector(".divider");
+
+    if (googleLogin) {
+        googleLogin.style.display = "none";
+    }
+    if (divider) {
+        divider.style.display = "none";
+    }
+}
+
+function showLoader(show) {
+    let existingOverlay = document.getElementById("loader-overlay");
+
+    if (show) {
+        if (!existingOverlay) {
+            let overlay = document.createElement("div");
+            overlay.id = "loader-overlay";
+            overlay.classList.add("loader-overlay");
+            let loader = document.createElement("div");
+            loader.classList.add("loader");
+
+            overlay.appendChild(loader);
+            document.body.appendChild(overlay);
+        }
+    } else {
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+    }
+}
+
+
+// Step 1 Validation: Name & Email
+async function validateStep1() {
+	showLoader(true);
+    let fullName = document.getElementById("fullName").value.trim();
+    let email = document.getElementById("email").value.trim();
+//     let emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?!con$)[a-zA-Z]{2,}$/;
+		let emailRegex = EMAIL_REGEX;
+
+    let isNameValid = fullName !== "";
+    let isEmailValid = emailRegex.test(email);
+
+    document.getElementById("nameError").innerText = isNameValid ? "" : "Full Name is required.";
+    document.getElementById("emailError").innerText = isEmailValid ? "" : "Enter a valid email.";
+			
+    if (!isNameValid || !isEmailValid) {
+        if (!isNameValid) saveClickActivity("DS-step1-error-missing-name");
+        if (!isEmailValid) saveClickActivity("DS-step1-error-invalid-email");
+        saveClickActivity("DS-error-validation-step1");
+				showLoader(false);
+        return;
+    }
+
+    try {
+
+        let response = await fetch(`https://upstage.interviewkickstart.com/api/v1/signup/check-email/?email=${encodeURIComponent(email)}`, {
+            method: "GET"
+        });
+
+        let data = await response.json();
+
+        if (response.ok) {
+            if (data.user_exists) {
+                saveClickActivity("DS-step1-user-exists");
+				hideGoogleLogin();
+				document.querySelector(".success-card").style.display = "none";
+                showStep(4);
+            } else {
+                saveClickActivity("DS-step1-new-user");
+                document.getElementById("userName").innerText = fullName;
+                hideGoogleLogin();
+                showStep(2);
+            }
+        } else {
+            throw new Error("Invalid response from server");
+        }
+
+        saveClickActivity("DS-step1-submit");
+    } catch (error) {
+		showLoader(false);
+        console.error("🚨 Error checking email:", error);
+        saveClickActivity("DS-step1-email-check-failed");
+        alert("❌ Error checking email. Please try again.");
+    }finally {
+        showLoader(false);
+    }
+}
+	
+	//GET IRClick ID from cookies
+	function getCookie(name) {
+    const cookies = document.cookie.split("; ");
+    for (let cookie of cookies) {
+        const [key, value] = cookie.split("=");
+        if (key === name) {
+            return value;
+        }
+    }
+    return null; 
+}
+
+const savedIrclickid = getCookie("irclickid");
+
+
+// Step 2 Validation: Password & Phone
+async function validateStep2() {
+    let phoneInput = document.getElementById("phone");
+
+    if (!iti && phoneInput) {
+        initPhoneInput();
+    }
+    showLoader(true);
+    let fullName = document.getElementById("fullName").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let phoneNumber = iti ? iti.getNumber() : phoneInput.value.trim();
+    let nameParts = fullName.split(" ").filter(name => name.trim() !== ""); 
+    let firstName = nameParts[0] || "";
+    let lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : firstName;
+
+    let signupPayload = {
+        email: email,
+        signup_type: isSocialLogin ? "google" : "email_password",
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: phoneNumber
+    };
+
+    if (!isSocialLogin) {
+        let password = document.getElementById("password").value.trim();
+        let confirmPassword = document.getElementById("confirm-password").value.trim();
+        let passwordErrors = [];
+
+        if (password.length < 8) {
+            passwordErrors.push("Password must be at least 8 characters long");
+        }
+        if (!/[a-z]/.test(password)) {
+            passwordErrors.push("Password must contain at least one lowercase letter");
+        }
+        if (!/[A-Z]/.test(password)) {
+            passwordErrors.push("Password must contain at least one uppercase letter");
+        }
+				if (!/[0-9]/.test(password)) {
+    					passwordErrors.push("Password must contain at least one number");
+						}
+        if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+            passwordErrors.push("Password must contain at least one special character");
+        }
+
+        let passwordErrorDiv = document.getElementById("passwordError");
+        if (passwordErrors.length > 0) {
+            passwordErrorDiv.innerHTML = passwordErrors.map(error => `<p>❌ ${error}</p>`).join("");
+            showLoader(false);
+			saveClickActivity("DS-error-password-validation-step2");
+            return;
+        } else {
+            passwordErrorDiv.innerHTML = "";
+        }
+		
+        if (confirmPassword !== password) {
+            document.getElementById("confirmPasswordError").innerText = "Passwords do not match.";
+            showLoader(false);
+			saveClickActivity("DS-error-confirm-password-mismatch-step2");
+            return;
+        } else {
+            document.getElementById("confirmPasswordError").innerText = "";
+        }
+
+        signupPayload.password = password;
+    }
+
+    if (iti && !iti.isValidNumber()) {
+        document.getElementById("phoneError").innerText = "Enter a valid phone number.";
+        showLoader(false);
+		saveClickActivity("DS-error-invalid-phone-step2");
+        return;
+    } else {
+        document.getElementById("phoneError").innerText = "";
+    }
+
+    try {
+		saveClickActivity("DS-signup-api-call-step2");
+        let signupResponse = await fetch("https://upstage.interviewkickstart.com/api/v1/signup/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(signupPayload)
+        });
+
+        let signupData = await signupResponse.json();
+
+        if (!signupResponse.ok) {
+            throw new Error(signupData.message || "Signup failed");
+        }
+
+		const courseSlug = localStorage.getItem("selectedCourseSlug");
+						if (courseSlug === "1-mock-interview-with-faang-experts") {
+								cohortName = "1 Mock Interview with FAANG+ Experts";
+						} else if (courseSlug === "3-mock-interviews-with-faang-experts") {
+								cohortName = "3 Mock Interviews with FAANG+ Experts";
+						}
+        let enrollmentPayload = {
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phoneNumber,
+            country: "US",
+            courseSlug: courseSlug,
+            cohort: cohortName
+        };
+			if (savedIrclickid) {
+    				enrollmentPayload.irclickid = savedIrclickid;
+					}
+        let enrollmentResponse = await fetch("https://upstage.interviewkickstart.com/api/v1/direct-sales/enrollment/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "66d44d8b-2118-4976-8f42-1101fe8d52b2"
+            },
+            body: JSON.stringify(enrollmentPayload)
+        });
+
+        let enrollmentData = await enrollmentResponse.json();
+
+        if (!enrollmentResponse.ok) {
+            throw new Error(enrollmentData.message || "Enrollment failed");
+        }
+        invitationCode = enrollmentData.invitation_code;
+        hideGoogleLogin();
+        showStep(3); 
+    } catch (error) {
+        console.error("🚨 Error:", error);
+        alert("❌ Error: " + error.message);
+		saveClickActivity("DS-error-api-call-step2");
+    } finally {
+        showLoader(false);
+    }
+}
+
+
+let stripe, elements, cardElement, invitationCode;
+
+async function fetchPaymentInfo() {
+    showLoader(true);
+    saveClickActivity("DS-payment-info-api-call");
+    try {
+        if (!invitationCode) {
+            throw new Error("🚨 Invitation code is missing. Please try again.");
+        }
+
+        let paymentResponse = await fetch(`https://upstage.interviewkickstart.com/api/v1/program-payment/payment-info/?invitation_code=${invitationCode}`, {
+            method: "GET"
+        });
+
+        let paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+            saveClickActivity("DS-error-payment-info-api");
+            throw new Error(paymentData.message || "🚨 Failed to fetch payment info.");
+        }
+
+        stripePublishableKey = paymentData.stripe_publishable_key;
+        orderId = paymentData.order_id;
+        amountToPay = paymentData.upfront_final_price;
+				 localStorage.setItem('payment_order_id', orderId);
+    localStorage.setItem('payment_amount', amountToPay);
+        if (!stripePublishableKey) {
+            saveClickActivity("DS-error-missing-stripe-key"); 
+            throw new Error("🚨 Stripe Publishable Key is missing.");
+        }
+
+        if (!amountToPay || amountToPay <= 0) {
+            saveClickActivity("DS-error-invalid-payment-amount");
+            throw new Error("🚨 Invalid payment amount. Please check payment info.");
+        }
+        document.getElementById("payment-amount").innerText = `USD ${amountToPay}`;
+        await createPaymentIntent();
+
+    } catch (error) {
+        console.error("🚨 Error:", error);
+        alert("❌ Error: " + error.message);
+        saveClickActivity("DS-error-fetch-payment-info");
+    } finally {
+        showLoader(false);
+    }
+}
+
+let selectedPaymentMethod = "card";
+
+// Switch payment method based on tab click
+function switchPaymentMethod(method) {
+    selectedPaymentMethod = method;
+
+    // Remove 'active' class from both tabs and apply to selected tab
+    document.querySelectorAll(".payment-tab").forEach(tab => tab.classList.remove("active"));
+    document.querySelector(`.payment-tab:nth-child(${method === "card" ? 1 : 2})`).classList.add("active");
+    saveClickActivity(`DS-payment-method-selected-${method}`);
+    saveClickActivity(`DS-create-payment-intent-${method}`);
+    createPaymentIntent();
+}
+
+
+async function createPaymentIntent() {
+    showLoader(true);
+    saveClickActivity(`DS-payment-intent-start-${selectedPaymentMethod}`);
+    try {
+        if (!invitationCode || !orderId || !amountToPay) {
+            saveClickActivity("DS-error-missing-payment-details"); 
+            throw new Error("🚨 Missing order details or invalid amount.");
+        }
+        let paymentMethod = selectedPaymentMethod === "card" ? "card" : "us_bank_account";
+
+        // Create the payment payload
+        let paymentPayload = {
+            invitation_code: invitationCode,
+            order_id: orderId,
+            amount: amountToPay, 
+            currency: "USD",
+            is_upfront_payment: true,
+            payment_type: "upfront",
+            payment_method: paymentMethod,
+            coupon_code_details: []
+        };
+        saveClickActivity(`DS-payment-intent-request-${paymentMethod}`); 
+
+        let paymentIntentResponse = await fetch("https://upstage.interviewkickstart.com/api/stripe/create-payment-intent/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paymentPayload)
+        });
+
+        let paymentIntentData = await paymentIntentResponse.json();
+
+        if (!paymentIntentResponse.ok) {
+            saveClickActivity("DS-error-payment-intent-api");
+            throw new Error(paymentIntentData.message || "🚨 Payment initialization failed.");
+        }
+
+        // Store the clientSecret for Stripe processing
+        clientSecret = paymentIntentData.data.client_secret;
+
+        if (!clientSecret) {
+            throw new Error("🚨 Client Secret is missing from Payment Intent response.");
+        }
+        saveClickActivity(`DS-payment-intent-success-${paymentMethod}`);
+        initializeStripe();
+
+    } catch (error) {
+        console.error("🚨 Error:", error);
+        alert("❌ Error: " + error.message);
+        saveClickActivity("DS-error-payment-intent-processing");
+    } finally {
+        showLoader(false);
+    }
+}
+
+
+// Correct Stripe Initialization
+function initializeStripe() {
+    saveClickActivity("DS-stripe-initialize-start"); 
+    if (!stripePublishableKey || !clientSecret) {
+        console.error("🚨 Missing Stripe Publishable Key or Client Secret.");
+        saveClickActivity("DS-error-missing-stripe-credentials");
+        return;
+    }
+
+    stripe = Stripe(stripePublishableKey);
+    elements = stripe.elements({ clientSecret: clientSecret });
+
+    // Ensure the container exists before mounting
+    const paymentContainer = document.getElementById("stripe-payment-element");
+    if (!paymentContainer) {
+        console.error("🚨 Stripe Payment Element container not found.");
+        saveClickActivity("DS-error-missing-stripe-container");
+        return;
+    }
+
+    paymentContainer.innerHTML = "";
+    const paymentElement = elements.create("payment");
+    paymentElement.mount("#stripe-payment-element");
+    saveClickActivity(`DS-stripe-initialize-success-${selectedPaymentMethod}`);
+}
+
+// Step 3: Payment (Proceed to Step 4)
+
+async function processPayment() {
+    showLoader(true); 
+
+    try {
+        if (!clientSecret) {
+            throw new Error("🚨 Client Secret is missing. Cannot process payment.");
+        }
+        const { error, paymentIntent } = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                return_url: window.location.href
+            }
+        });
+        if (error) {
+            saveClickActivity("DS-error-payment-failed");
+            throw new Error(error.message);
+        }
+        saveClickActivity(`DS-payment-success-${selectedPaymentMethod}`);
+    } catch (error) {
+        console.error("🚨 Payment Failed:", error);
+        alert("❌ Payment Failed: " + error.message);
+    } finally {
+        saveClickActivity("DS-payment-process-end");
+        showLoader(false);
+    }
+}
+
+
+// Google Login: Auto-fill Name & Email + Skip Password
+async function handleCredentialResponse(response) {
+    saveClickActivity("google-login-start");
+    isSocialLogin = true;
+
+    try {
+        // Decode JWT token
+        const jwtDecoded = parseJwt(response.credential);
+
+        if (!jwtDecoded || !jwtDecoded.email) {
+            saveClickActivity("error-google-jwt-decoding");
+            throw new Error("Invalid Google response.");
+        }
+
+        const fullName = jwtDecoded.name;
+        const email = jwtDecoded.email;
+
+        if (!email) {
+            alert("Google login failed: No email provided.");
+            return;
+        }
+
+        // Call the email check API
+        let checkResponse = await fetch(`https://upstage.interviewkickstart.com/api/v1/signup/check-email/?email=${encodeURIComponent(email)}`, {
+            method: "GET"
+        });
+
+        let checkData = await checkResponse.json();
+
+        if (checkResponse.ok) {
+            if (checkData.user_exists) { 
+				document.querySelector(".success-card").style.display = "none";
+                hideGoogleLogin();
+                showStep(4);
+            } else {
+                saveClickActivity("google-login-new-user");
+                document.getElementById("fullName").value = fullName;
+                document.getElementById("email").value = email;
+				document.getElementById("userName").innerText = fullName;
+				document.getElementById("password").closest(".form-group").style.display = "none";
+    			document.getElementById("confirm-password").closest(".form-group").style.display = "none";
+                hideGoogleLogin();
+                showStep(2);
+            }
+        } else {
+            throw new Error("Failed to check email existence.");
+        }
+        saveClickActivity("google-login-success"); 
+
+    } catch (error) {
+        console.error("🚨 Google Login Error:", error);
+        saveClickActivity("error-google-login"); 
+        alert("❌ Google Login Failed: " + error.message);
+    }
+}
+
+function parseJwt(token) {
+    let base64Url = token.split('.')[1];
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
+
+window.onload = function () {
+    google.accounts.id.initialize({
+        client_id: "926124471313-k4ki422u2jimp2dvbade4fna45701i1g.apps.googleusercontent.com",
+        callback: handleCredentialResponse
+    });
+
+    google.accounts.id.renderButton(
+        document.querySelector(".g_id_signin"),
+        { theme: "outline", size: "large" } 
+    );
+
+    google.accounts.id.prompt(); 
+};
+</script>

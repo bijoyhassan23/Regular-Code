@@ -1,0 +1,65 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "Data Science Interview Masterclass",
+  "description": "An intensive program designed to prepare professionals for Data Science interviews at FAANG and Tier-1 tech companies. The course covers Python programming, SQL, data structures, algorithms, machine learning, and includes personalized coaching and mock interviews.",
+  "provider": {
+    "@type": "Organization",
+    "name": "Interview Kickstart",
+    "url": "https://interviewkickstart.com"
+  },
+  "educationalCredentialAwarded": "Certificate of Completion",
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "name": "Data Science Interview Masterclass",
+    "courseMode": "Online",
+    "instructor": [
+      {
+        "@type": "Person",
+        "name": "Andrew Treadway",
+        "jobTitle": "Research Data Scientist",
+        "affiliation": { "@type": "Organization", "name": "Meta" }
+      },
+      {
+        "@type": "Person",
+        "name": "Omkar Deshpande",
+        "jobTitle": "Head of Curriculum",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "Interview Kickstart"
+        }
+      },
+      {
+        "@type": "Person",
+        "name": "Nick Camilleri",
+        "jobTitle": "Head of Career Skills Devp. and Coaching",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "Interview Kickstart"
+        }
+      },
+      {
+        "@type": "Person",
+        "name": "Qiuping Xu",
+        "jobTitle": "Principal Scientist",
+        "affiliation": { "@type": "Organization", "name": "Gopuff" }
+      },
+      {
+        "@type": "Person",
+        "name": "Abdul Salama",
+        "jobTitle": "Manager, AI Platform",
+        "affiliation": { "@type": "Organization", "name": "Microsoft" }
+      },
+      {
+        "@type": "Person",
+        "name": "Bharath Srikanth",
+        "jobTitle": "Senior Data Scientist",
+        "affiliation": { "@type": "Organization", "name": "Uber" }
+      }
+    ],
+    "location": {
+      "@type": "VirtualLocation",
+      "url": "https://interviewkickstart.com/courses/data-science-interview-masterclass"
+    }
+  }
+}

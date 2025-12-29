@@ -1,0 +1,517 @@
+<!-- PWC Webinar Form -->
+<script>
+
+    function downloadFun(){
+		if(!downloadAblePDFLink) return false;
+        const link = document.createElement("a");
+        link.href = downloadAblePDFLink;
+        link.download = "IK-success-stories-.pdf";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let download_status = null;
+        let masterClassSlotWebinarType = 'MASTERCLASS_INDIA_2';
+        const getPwcWebinarForm = document.querySelector('.ai_agents_with_pwc_from');
+
+        const getDataWebNearShowBtn = document.querySelectorAll(`[href="#agentic_webinar_pwc_form"]`);
+        const getDataWebNearFormClose = getPwcWebinarForm.querySelectorAll(`.pwc_gql_web_near_close`);
+			
+        if(location.search.toLowerCase().includes('download-brochure')){
+            getPwcWebinarForm.setAttribute(`show_status`, true);
+        }else if(location.search.toLowerCase().includes('webinar-registration')){
+            getWebNearForm.setAttribute('show_status', true);
+        }
+
+        getDataWebNearShowBtn.forEach(eachWebNearBtn => {
+            eachWebNearBtn.addEventListener(`click`, function(e){
+                e.preventDefault();
+                getPwcWebinarForm.setAttribute(`show_status`, true);
+            })
+        });
+        getDataWebNearFormClose.forEach(eachClose => {
+            eachClose.addEventListener(`click`, function(e){
+                e.preventDefault();
+                getPwcWebinarForm.setAttribute(`show_status`, false);
+
+                if(download_status !== null && download_status !== 'completed'){
+                    clearTimeout(download_status);
+                    download_status = null;
+                } 
+            })
+        });
+
+        function polpulatedPwcSlot(slots) {
+            const regularSlotContainer = getPwcWebinarForm.querySelector('.regular-slot-container .slot_fild');
+
+            regularSlotContainer.innerHTML = "";
+            
+            slots.forEach((slot, index) => {
+                let slotWrapper = document.createElement("label");
+                slotWrapper.classList.add("slot");
+
+                let slotInputAndButton = `
+                    <input 
+                        type="radio" 
+                        name="v2_slot_pwc" 
+                        class="v2_slot_radio" 
+                        value="${slot.start_time}" 
+                        data-endtime="${slot.end_time}" 
+                        data-invitee_starttime="${slot.invitee_start_time}" 
+                        data-invitee_endtime="${slot.invitee_end_time}" 
+                        data-name="${slot.start_time}" 
+                        data-webinar_lead_type="${slot.webinar_lead_type}" 
+                        ${index === 0 ? "checked" : ""}
+                        data-webinar_type="${slot?.webinar_type || slot?.webinar_lead_type || "REGULAR"}"
+                        data-event_name="${slot?.event_name || webNearInfo?.eventname || eventName}"
+                        slot-index="${index}"
+                    >
+                    <div class="time_slot_wrapper">
+                        <div class="v2_day">${slot.weekday.slice(0, 3).toUpperCase()}</div>
+                        <div class="v2_date">${slot.day}</div> 
+                        <hr>
+                        <div class="v2_time">${slot.hour}:${slot.minute} ${slot.am_or_pm}</div>
+                    </div>
+                `;
+                let slotAlert = ``;
+                if (index === 0) {
+                    slotAlert = `<div class="v2_timer_alart" alart_type="danger">
+                        Almost full
+                    </div>`;
+                } else if (index === slots.length - 1) {
+                    slotAlert = `<div class="v2_timer_alart" alart_type="warning">
+                        Filling fast
+                    </div>`;
+                }
+                slotWrapper.innerHTML = `${slotInputAndButton}${slotAlert}`
+                regularSlotContainer.appendChild(slotWrapper);
+            });
+        }
+
+        fetch(`https://uplevel.interviewkickstart.com/api/webinar-slot/upcoming-slots/?country=IND&program=Backend&timezone=${v_timezone}&type=MASTERCLASS_INDIA_2`, {
+            method: "GET",
+            headers: {
+                "Authorization": "1Cgx6oYXkOlWkNDn7_tXO",
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data && data?.length > 0){
+                polpulatedPwcSlot(data);
+            }else{
+                throw new Error(`NO Data Found On WebinarType slot`);
+            }
+        })
+        .catch(err => {
+            masterClassSlotWebinarType = webinarType;
+            if(webinarSlots && webinarSlots?.length > 0){
+                polpulatedPwcSlot(webinarSlots);
+            }else{
+                document.addEventListener('webNearLoaded', () => {
+                    polpulatedPwcSlot(webinarSlots);
+                });
+            }
+            console.error("Fetch Error:", err);
+        });
+
+        function step_change_pwc(ac_step = 1){
+			console.log("step change call ", ac_step);
+            getPwcWebinarForm.setAttribute('pwc_step_status', `${ac_step}`);
+
+            if(download_status !== null && download_status !== 'completed'){
+                getPwcWebinarForm.setAttribute('gql_status', false);
+                clearTimeout(download_status);
+                download_status = null;
+            } 
+
+            if(ac_step === 1){
+                getPwcWebinarForm.setAttribute('complete_stauts', `false`);
+                getPwcWebinarForm.setAttribute('gql_status', `false`);
+                getPwcWebinarForm.querySelector('.pwc_webnear_regitration_fr').setAttribute('ac_step', `1`);
+            }else if(ac_step === 2){
+                getPwcWebinarForm.setAttribute('complete_stauts', `false`);
+                getPwcWebinarForm.setAttribute('gql_status', `true`);
+                getPwcWebinarForm.querySelector('.pwc_gql_registration_popup').setAttribute('ac_step', `1`);
+            }else if(ac_step === 3){
+                getPwcWebinarForm.setAttribute('complete_stauts', `false`);
+                getPwcWebinarForm.setAttribute('gql_status', `false`);
+                getPwcWebinarForm.querySelector('.pwc_webnear_regitration_fr').setAttribute('ac_step', `2`);
+                if(download_status === null){
+                    getPwcWebinarForm.setAttribute('download_status', true);
+                    const nextStepBtn = getPwcWebinarForm.querySelector(".pwc_webnear_regitration_fr .step_2_btn");
+                    //nextStepBtn.disabled = true;
+                    download_status = setTimeout(() => {
+                        getPwcWebinarForm.setAttribute('download_status', false);
+                        download_status = 'completed';
+                        nextStepBtn.disabled = false;
+                        downloadFun();
+                    }, 30000);
+                }
+            }else if(ac_step === 4){
+                getPwcWebinarForm.setAttribute('complete_stauts', `true`);
+                getPwcWebinarForm.setAttribute('gql_status', `false`);
+								if(download_status !== 'completed'){
+									getPwcWebinarForm.setAttribute('download_status', false);
+									download_status = 'completed';
+									downloadFun();
+								}
+            }else{
+                console.log('No step found');
+            }
+        }
+    
+        const webNearFullName = getPwcWebinarForm.querySelector('.web_full_name input#pwc_Full-Name');
+        const webNearEmailAddress = getPwcWebinarForm.querySelector('.web_em_address input#pwc_Email-Address-7');
+        const webNearPhoneNumber = getPwcWebinarForm.querySelector('.web_phone_number input#pwc_webinar_pnumber');
+        let webNearSlots = getPwcWebinarForm.querySelector('.web_dual');
+
+        const webNearPhoneNumberWri = window.intlTelInput(webNearPhoneNumber, {
+            initialCountry: "auto",
+            geoIpLookup: function (callback) {
+                fetch('https://ipinfo.io', { headers: { 'Accept': 'application/json' } })
+                    .then((resp) => resp.json())
+                    .then((resp) => { callback(resp.country); })
+                    .catch(() => callback('in'));
+            },
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+        });
+
+        const getFnErrMsg = getPwcWebinarForm.querySelector('.web_full_name');
+        const getEmErrMsg = getPwcWebinarForm.querySelector('.web_em_address');
+        const getPhErrMsg = getPwcWebinarForm.querySelector('.web_phone_number');
+
+        async function pushToEndPoint(endpoint) {
+            let getCheckWebnear = webNearSlots.querySelector('input:checked');
+            webNearInfo.eventStartTime = getCheckWebnear ? getCheckWebnear.value : "";
+            webNearInfo.eventEndTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-endtime') : "";
+            webNearInfo.inviteStartTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-invitee_starttime') : "";
+            webNearInfo.inviteEndTime = getCheckWebnear ? getCheckWebnear.getAttribute('data-invitee_endtime') : "";
+
+            let formData = {
+                "First Name": webNearInfo.firstName,
+                "whatsAppUserConsent": webNearInfo.whatsAppUserConsent,
+                "Last Name": webNearInfo.lastName,
+                "Email Address": webNearEmailAddress.value,
+                "ByeCalendlyType": webNearInfo.bye_calendly_type,
+                "webinar-type": masterClassSlotWebinarType,
+                "Webinar Lead Type": webNearInfo.webinar_lead_type,
+                "utm_source": webNearInfo.utm_source,
+                "utm_medium": webNearInfo.utm_medium,
+                "utm_campaign": webNearInfo.utm_campaign,
+                "utm_content": webNearInfo.utm_content,
+                "utm_adset": webNearInfo.utm_adset,
+                "utm_term": webNearInfo.utm_term,
+                "City": webNearInfo.wr__city,
+                "Device": webNearInfo.wr__device,
+                "Referrer": webNearInfo.wr__referrer,
+                "Region": webNearInfo.wr__region,
+
+                "gclid": webNearInfo.gclid,
+                "msclkid": webNearInfo.msclkid,
+                "fbclid": webNearInfo.fbclid,
+                "fbcId": webNearInfo.fbcId,
+                "fbpId": webNearInfo.fbpId,
+                "user_agent": webNearInfo.userAgent,
+                "user_id": webNearInfo.user_id,
+                "li_fat_id": webNearInfo.li_fat_id,
+
+                "cta_page_url": webNearInfo.cta_page_url,
+                "landing_page_url": webNearInfo.l_page_url,
+                "event_name": webNearInfo.eventname,
+                "user_timezone": webNearInfo.user_timezone,
+                "page_url": webNearInfo.page_url,
+                "site_url": webNearInfo.site_url,
+                "v_country": webNearInfo.v_country,
+                "salesforce_uuid": webNearInfo.salesforce_uuid,
+                "phone_number_full": webNearInfo.fPhoneNumber,
+                "is_exit_intent_popup": webNearInfo.is_exit_intent_popup,
+
+                "Event Start Time": webNearInfo.eventStartTime,
+                "Event End Time": webNearInfo.eventEndTime,
+                "Invitee Start Time": webNearInfo.inviteStartTime,
+                "Invitee End Time": webNearInfo.inviteEndTime,
+                "expertInsightABValue": typeof expertInsightABValue !== "undefined" ? expertInsightABValue : "",
+                "lead_magnet": "download_brochure"
+            };
+
+            let options = {
+                method: 'POST',
+                mode: "no-cors",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            };
+
+            try {
+                const sendData = await fetch(endpoint, options);
+                return sendData;
+            } catch (err) {
+                console.error("P0: The Zapier Webhook Failed.", err);
+            }
+        }
+        function hideError() {
+            getFnErrMsg.setAttribute('err_status', false);
+            getEmErrMsg.setAttribute('err_status', false);
+            getPhErrMsg.setAttribute('err_status', false);
+        }
+
+        function fromSend1stStep(){
+            setHiddenFields();
+            getPwcWebinarForm.setAttribute("loader_status", true);
+
+            let fullname = webNearFullName.value.trim();
+            let wEmail = webNearEmailAddress.value;
+            let fullPhoneNumber = webNearPhoneNumber.value;
+
+            //Hide errors
+            webNearFullName.addEventListener('input', hideError);
+            webNearEmailAddress.addEventListener('input', hideError);
+            webNearPhoneNumber.addEventListener('input', hideError);
+            webNearFullName.addEventListener('focus', hideError);
+            webNearEmailAddress.addEventListener('focus', hideError);
+            webNearPhoneNumber.addEventListener('focus', hideError);
+
+            //Error check
+            if ((fullname.length == 0) && (wEmail.length == 0) && (fullPhoneNumber.length == 0)) {
+                getFnErrMsg.setAttribute('err_status', true);
+                getEmErrMsg.setAttribute('err_status', true);
+                getPhErrMsg.setAttribute('err_status', true);
+                getPwcWebinarForm.setAttribute("loader_status", false);
+                track("info-e", "validation-general");
+                return;
+            } else if (!name_regex.test(fullname) || fullname.length == 0) {
+                getFnErrMsg.setAttribute('err_status', true);
+                getPwcWebinarForm.setAttribute("loader_status", false);
+                track("info-e", "validation-name");
+                return;
+            } else if (fullname.length > 31) {
+                const errMsgElement = getFnErrMsg?.querySelector(".err_msg");
+                getFnErrMsg?.setAttribute("err_status", true);
+                errMsgElement.innerHTML = "Full name cannot exceed 31 characters.";
+                getPwcWebinarForm?.setAttribute("loader_status", false); // Reset loader
+                track("info-e", "validation-name-length");
+                return;
+            } else if (!email_regex.test(wEmail) || wEmail.length == 0) {
+                getEmErrMsg.setAttribute('err_status', true);
+                getPwcWebinarForm.setAttribute("loader_status", false);
+                track("info-e", "validation-email");
+                return;
+            } else if (!phone_regex.test(fullPhoneNumber) || fullPhoneNumber.length == 0) {
+                getPhErrMsg.setAttribute('err_status', true);
+                getPwcWebinarForm.setAttribute("loader_status", false);
+                track("info-e", "validation-phone");
+                return;
+            } else {
+                if (fullname.substring(0, fullname.indexOf(' ')) == '') {
+                    webNearInfo.firstName = fullname.substring(fullname.indexOf(' ') + 1);
+                    webNearInfo.lastName = fullname.substring(fullname.indexOf(' ') + 1);
+                } else if (fullname.substring(fullname.indexOf(' ') + 1) == '') {
+                    webNearInfo.firstName = fullname.substring(0, fullname.indexOf(' '));
+                    webNearInfo.lastName = fullname.substring(0, fullname.indexOf(' '));
+                } else {
+                    webNearInfo.firstName = fullname.substring(0, fullname.indexOf(' '));
+                    webNearInfo.lastName = fullname.substring(fullname.indexOf(' ') + 1);
+                }
+
+                try {
+                    dataLayer.push({
+                        'event': 'new_webinar_registration_form_submitted',
+                        'webinar_name': webNearInfo.eventname
+                    });
+                } catch (err) {
+                    track("info-e", "reporting-data-layer");
+                    console.error(err);
+                }
+
+                webNearInfo.fPhoneNumber = "";
+                if (typeof intlTelInputUtils == "undefined") {
+                    try {
+                        webNearInfo.fPhoneNumber = `+${webNearPhoneNumberWri.getSelectedCountryData().dialCode}${document.querySelector("#webinar_pnumber")?.value}`;
+                    } catch (error) {
+                        console.error("Error while getting phone number", error);
+                        webNearInfo.fPhoneNumber = document.querySelector("#webinar_pnumber")?.value;
+                    }
+                } else {
+                    webNearInfo.fPhoneNumber = webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164);
+                }
+                // webNearInfo.fPhoneNumber = webNearPhoneNumberWri.getNumber(intlTelInputUtils.numberFormat.E164);
+
+                pushToEndPoint("https://hooks.zapier.com/hooks/catch/11068981/34xpbjl/")
+                    .then(() => {
+                        step_change_pwc(2);
+                        getPwcWebinarForm.setAttribute("loader_status", false);
+                        track("info");
+                    }).catch((e) => {
+                        track("info-e", "flow-general");
+                    });
+            }
+        }
+        
+        function fromSend2ndStep() {
+            getPwcWebinarForm.setAttribute("loader_status", true);
+
+            const getCheckWebnear = webNearSlots.querySelector('input:checked');
+
+            let utmm = visitor_id + ":" + webNearInfo.v_country;
+            let sf_uuid = v_timezone + ":in.ik" + cta_lp + ":in.ik" + getCookie("ik-landingpage");
+
+            let utmstring = {
+                assigned_to: "Interview Kickstart",
+                invitee_first_name: webNearInfo.firstName,
+                invitee_last_name: webNearInfo.lastName,
+                invitee_email: webNearEmailAddress.value,
+                answer_1: webNearInfo.fPhoneNumber,
+                event_start_time: getCheckWebnear.value,
+                event_end_time: getCheckWebnear.getAttribute('data-endtime'),
+                utm_medium: utmm,
+                salesforce_uuid: sf_uuid,
+                whatsapp_consent: true,
+                phoneNumCountry: webNearPhoneNumberWri?.j || "",
+                phonerNumber: webNearPhoneNumber.value
+            };
+            pushToEndPoint("https://hooks.zapier.com/hooks/catch/11068981/34xpujj/")
+                .then(() => {
+                    track("slot");
+                    getPwcWebinarForm.querySelector("#gql_rg_date").innerHTML = formatDate(new Date(webNearInfo.eventStartTime));
+
+                    secondStepSecondRequest(getCheckWebnear)
+                        .then(function () {
+                            utmstring = {
+                                ...utmstring,
+                                leadCreatedTime: LeadCreatedTime,
+                            }
+                            bake_cookie("from_cookie", utmstring);
+                            step_change_pwc(4);
+                        }).catch(() => {
+                        track("slot-e", "flow-bq");
+                        });
+                }).catch(() => {
+                track("slot-e", "flow-general");
+                });
+        }
+        
+        getPwcWebinarForm.querySelector(".pwc_webnear_regitration_fr .step_1_btn").addEventListener("click", fromSend1stStep);
+        getPwcWebinarForm.querySelector(".pwc_webnear_regitration_fr .step_2_btn").addEventListener("click", fromSend2ndStep);
+
+        getPwcWebinarForm.querySelector(".pwc_webnear_regitration_fr .fr_stage_2 .fr_btn_back").addEventListener("click", function(){
+            step_change_pwc(2);
+        });
+
+        getPwcWebinarForm.querySelector(".pwc_gql_registration_popup .gql_popup_stage_1 .gql_btn_back").addEventListener("click", function(){
+            step_change_pwc(1);
+        });
+
+
+        // GQL Script
+        const gqlWorkExperience = getPwcWebinarForm?.querySelector(".pwc_gql_experience_radio_con");
+        const gqlDomainRole = getPwcWebinarForm?.querySelector("#pwc_gql_domain_role");
+        const gqlStartIn = getPwcWebinarForm?.querySelector("#pwc_gql_Start_Interviewing");
+        const gqlLaidOff = getPwcWebinarForm?.querySelector("#pwc_gql_pp_laidoff_flag");
+
+        const gqlWrErrDiv = getPwcWebinarForm?.querySelector(".gql_exp_fild");
+        const gqlDmErrDiv = getPwcWebinarForm?.querySelector(".gql_domain_role_fild");
+        const gqlStartErrDiv = getPwcWebinarForm?.querySelector(".gql_start_interviewing_fild");
+
+        gqlDomainRole.addEventListener("change", function () {
+            gqlDmErrDiv.setAttribute("err_status", false);
+        });
+
+        gqlStartIn.addEventListener("change", function () {
+            gqlStartErrDiv.setAttribute("err_status", false);
+        });
+
+        function gqlPopup1stStep() {
+            let err = false;
+            console.log("gqlPopup1stStep called");
+
+            if (!gqlDomainRole.value) {
+                err = true;
+                gqlDmErrDiv.setAttribute("err_status", err);
+            }
+
+            if (!gqlStartIn.value) {
+                err = true;
+                gqlStartErrDiv.setAttribute("err_status", err);
+                return;
+            }
+
+            if (!err) {
+                gqlZapSend();
+                step_change_pwc(3);
+            }
+        }
+
+        async function gqlZapSend() {
+            let fbc = getCookieValue('_fbc');
+            const fbp = getCookieValue('_fbp');
+            const userAgent = navigator?.userAgent;
+            const workExp = gqlWorkExperience.querySelector('input[name="experience_level"]:checked');
+            let GQLformData = {
+                'First Name': webNearInfo.firstName,
+                'Last Name': webNearInfo.lastName,
+                'Email Address': webNearEmailAddress.value,
+                utm_source: webNearInfo.utm_source,
+                utm_medium: webNearInfo.utm_medium,
+                utm_campaign: webNearInfo.utm_campaign,
+                utm_term: webNearInfo.utm_term,
+                gclid: webNearInfo.gclid,
+                msclkid: webNearInfo.msclkid,
+                fbclid: webNearInfo.fbclid,
+                fbcId: fbc || null,
+                fbpId: fbp || null,
+                user_agent: userAgent || '',
+                user_id: visitor_id,
+                user_timezone: v_timezone,
+                v_country: v_country,
+                "phone_number_full": webNearInfo.fPhoneNumber,
+                "Event Start Time": webNearInfo.eventStartTime,
+                "Event End Time": webNearInfo.eventEndTime,
+                'Work Experience': workExp.value,
+                'Role Domain': gqlDomainRole.value,
+                // 'PA Consult Time': "",
+                // 'PA Consult Time Other': "",
+                'Choose Agentic AI': gqlStartIn.value,
+                'Interview Start Time': '',
+                'Laid Off': gqlLaidOff.checked,
+                'Is Student': false,
+                // 'Domain Switch': '',
+                salesforce_uuid: webNearInfo.salesforce_uuid,
+                "GA_event_id": Date.now(),
+                "lead_magnet": "download_brochure"
+            };
+
+            try {
+                dataLayer.push({
+                event: "wordpress_form_submitted",
+                formName: "Lead Qualifier Form",
+                event_id: GQLformData.GA_event_id,
+                })
+            } catch (err) {
+                saveClickActivity("info_and_gql_update-error-in-data-layer-push");
+                console.log("error in data layer push", err);
+            }
+
+            let options = {
+                method: 'POST',
+                mode: "no-cors",
+                headers: {
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(GQLformData),
+            };
+
+            try {
+                let response = await fetch("https://hooks.zapier.com/hooks/catch/11068981/34xp8vf/", options);
+                saveFormEventsActivity("gql");
+            } catch (err) {
+                console.error("gqlZapSend", err);
+            }
+        }
+        
+        getPwcWebinarForm?.querySelector(".gql_step_1_btn").addEventListener("click", gqlPopup1stStep);
+        getPwcWebinarForm?.querySelector(".gql_popup_stage_1 .gql_btn_back").addEventListener("click", function () {
+            step_change_pwc(1);
+        });
+    });
+</script>

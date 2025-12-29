@@ -1,0 +1,109 @@
+/* ---form css--- */
+body:not(.page-id-12044) .webnear_regitration_fr .web_regular .time_slot_wrapper,
+body:not(.page-id-12044) .webnear_regitration_fr .fr_stage_2 > .event_heading,
+body:not(.page-id-12044) .webnear_regitration_fr .fr_stage_2 > .event_subheading,
+body.page-id-12044 .webnear_regitration_fr .web_regular span.text {
+  display: none;
+}
+
+body.page-id-12044 .webnear_regitration_fr .web_regular {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-content: start;
+  align-items: baseline;
+  gap: 10px;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label {
+  padding: 3px;
+  width: 100% !important;
+  display: inline-block !important;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label input[type=radio] {
+  display: none;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label .time_slot_wrapper {
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  cursor: pointer;
+  background-color: #fff;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label .time_slot_wrapper .v2_day {
+  font-size: 12px;
+  color: #000;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label .time_slot_wrapper .v2_date {
+  color: #000;
+  font-family: Inter, sans-serif;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 600;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label .time_slot_wrapper hr {
+  border: 0.5px solid rgba(145, 145, 145, 0.5019607843);
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label .time_slot_wrapper .v2_time {
+  float: none;
+  clear: none;
+  color: #194bac;
+  padding-top: 5px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  display: block;
+}
+body.page-id-12044 .webnear_regitration_fr .web_regular label:has(input[type=radio]:checked) .time_slot_wrapper {
+  border: 1px solid #194bac;
+}
+
+body .webnear_regitration_fr .fr_stage_2 > .event_heading{
+  color: #000;
+  font-family: inter;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+body .webnear_regitration_fr .fr_stage_2 > .event_subheading{
+  color: #354156;
+  font-family: inter;
+  font-size: 11px;
+  line-height: 20px;
+  font-weight: 400;
+  margin-bottom: 20px
+}
+
+@media (max-width: 767px) {
+  body .webnear_regitration_fr .fr_stage_2 > .event_subheading,
+  body .webnear_regitration_fr .fr_stage_2 > .event_heading{
+      display: none;
+  }
+}
+
+body .webnear_regitration_fr .fr_stage_2 {
+  background: linear-gradient(180deg, #E6F8FF 0%, #FCFEFF 100%);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+body .webnear_regitration_fr .fr_stage_2 .v2_timer_alart{
+    color: #ffb023;
+    text-align: center;
+    background-color: #fff7e9;
+    border-radius: 25px;
+    font-family: Inter, sans-serif;
+    font-size: 10px;
+    line-height: 16px;
+    font-weight: 600;
+    width: max-content;
+    margin: -4px  auto 0px auto;
+    padding: 1px 10px;
+}
+
+body .webnear_regitration_fr .fr_stage_2 .v2_timer_alart[alart_type=danger] {
+    color: #b1060f;
+}
+/* ---form css--- */

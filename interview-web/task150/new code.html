@@ -1,0 +1,30 @@
+<script>
+    let currentClickId = '';
+    let mainSaveClickActivity = saveClickActivity;
+    saveClickActivity = function(clickID, ...res){
+        currentClickId = clickID;
+        return mainSaveClickActivity.call(this, clickID, ...res);
+    };
+
+    function delayFetch(url, options = {}){
+        setTimeout(function(){
+            const parsedOption = JSON.parse(options.body);
+            parsedOption.DataClickID = currentClickId;
+            options.body = JSON.stringify(parsedOption);
+            console.log(currentClickId);
+            fetch(url, options, false);
+        }, 500);
+    }
+
+    (() => {
+        const oldFetch = window.fetch;
+        window.fetch = async function (url, options = {}, check = true) {
+            if (!(check && typeof url === 'string' && url.includes('hooks.zapier') && options.body)) return oldFetch.call(this, url, options);
+            delayFetch(url, options);
+            return new Promise(res => res());
+        };
+    })();
+</script>
+
+
+

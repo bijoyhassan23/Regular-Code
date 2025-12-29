@@ -1,0 +1,146 @@
+<script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+<script>
+    const searchFild = document.querySelector("#search_fild");
+    const searchButton = document.querySelector("#search_button");
+    const searchResultCon = document.querySelector("#search_result");
+    const mapContainer = document.querySelector("#map");
+
+    let map, locationApi = `/wp-json/map/v1/locations`, searchRaidus = 20, position = { lat: 52.103359711221245, lng: 5.2462851862407405 }, markers = [], openInfoWindow;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let searchVal = urlParams.get('mapstorelocation');
+
+    searchFild.value = searchVal;
+
+    searchButton.addEventListener("click", function(){
+        markers = [];
+        searchVal = searchFild.value;
+        if(searchVal) initMap();
+    })
+
+    async function initMap(){
+        searchResultCon.style.display = searchVal ? 'flex' : 'none';
+
+        const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+        const { MarkerClusterer } = markerClusterer;
+
+        let searchPosi;
+        if(searchVal){
+            try{
+                searchPosi = await getCoordinates(searchVal);
+                if(searchPosi.lat === 0 || searchPosi.lng === 0) throw new Error();
+            }catch(err){
+                searchPosi = await getCoordinates(searchVal + " Nederland");
+            }
+            if(searchPosi) {
+                locationApi = `/wp-json/map/v1/locations?lat=${searchPosi.lat}&lng=${searchPosi.lng}&radius=${searchRaidus}`;
+                position = searchPosi;
+            };
+        }
+
+
+        map = new google.maps.Map(mapContainer, {
+            center: position,
+            zoom: 8,
+            styles: [{ elementType: "all", stylers: [{ saturation: "-100" }]}]
+        });
+
+        try{
+            let response = await fetch(locationApi);
+            let markerPoints = await response.json();
+            if(searchPosi) markerPoints.sort((a, b) => a.distance - b.distance);
+            searchResultCon.innerHTML = "";
+            markerPoints.forEach(markerAddFun);
+            new MarkerClusterer({ markers, map,  renderer: {
+                render: ({ count, position }) => {
+                    return new google.maps.Marker({
+                            position,
+                            icon: {
+                                url: "https://hermanns.togetherpreview.nl/wp-content/uploads/2025/03/m5.png", // Replace with your custom cluster image URL
+                                scaledSize: new google.maps.Size(50, 50), // Adjust size
+                            },
+                            label: {
+                                text: count.toString(),
+                                color: "white",
+                                fontSize: "13px",
+                                fontWeight: "bold",
+                            },
+                        });
+                }
+            }});
+        }catch(err){
+            console.log("error");
+        }
+    }
+
+    window.addEventListener("DOMContentLoaded", initMap);
+
+    function getCoordinates(address) {
+        return new Promise((resolve, reject) => {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address }, (results, status) => {
+                if (status === "OK") {
+                    const location = results[0].geometry.location;
+                    resolve({ lat: location.lat(), lng: location.lng() });
+                }else{
+                    reject(false);
+                }
+            });
+        })
+    }
+
+    function markerAddFun(eachMarker, index){
+        const eachLocationContainer = document.createElement("div");
+        eachLocationContainer.classList.add("each_location");
+        eachLocationContainer.innerHTML = `
+            <div class="count_number"><span>${index + 1}</span></div>
+            <div class="location_body">
+                <div class="title">${eachMarker?.title}</div>
+                <div class="address">${eachMarker?.address}</div>
+                <a href="${eachMarker?.page_url}" class="sg_page_url">​Bekijk locatie ></a>
+                <div class="distance">${eachMarker?.distance.toFixed(2)} kilometers</div>
+                <a href="https://maps.google.com/maps?saddr=${searchVal || ""}&daddr=${eachMarker?.address}" class="rout_link">Route</a>
+            </div>
+        `;
+        searchResultCon.appendChild(eachLocationContainer);
+
+        let marker = new google.maps.Marker({
+            position: { lat: eachMarker?.lat, lng: eachMarker?.lng },
+            title: "Uluru",
+            icon: {
+                url: "https://hermanns.togetherpreview.nl/wp-content/uploads/2025/02/markerpurple-copy.png",
+                scaledSize: new google.maps.Size(25, 25),
+            },
+        });
+
+        marker.setMap(map);
+        markers.push(marker);
+
+        const infoWin = new google.maps.InfoWindow({
+          content: `
+            <div class="info_window">
+                <div class="title">${eachMarker?.title}</div>
+                <div class="address">${eachMarker?.address}</div>
+                <a href="${eachMarker?.page_url}" class="sg_page_url">​Bekijk locatie ></a>
+            </div>
+          `,
+        })
+
+        eachLocationContainer.addEventListener("click", function(e){
+            if(e.target.tagName != "A"){
+                if(openInfoWindow) openInfoWindow.close();
+                openInfoWindow = infoWin;
+                infoWin.open(map, marker);
+                map.setZoom(12);
+                map.setCenter({ lat: eachMarker?.lat, lng: eachMarker?.lng }); 
+                window.scrollTo({ top: mapContainer.getBoundingClientRect().top + window.scrollY - 250, behavior: "smooth" });
+            }
+        })
+
+        marker.addListener("click", function(){
+            if(openInfoWindow) openInfoWindow.close();
+            openInfoWindow = infoWin;
+            infoWin.open(map, marker);
+        })
+    }
+</script>

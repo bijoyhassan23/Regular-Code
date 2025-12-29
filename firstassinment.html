@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1st Assinment</title>
+
+    <style>
+        *{
+            margin:  0px;
+            padding: 0px;
+        }
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        form{
+            border: solid 2px red;
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 10px;
+            > *{
+                border: solid 2px green;
+                padding: 10px;
+            }
+            hr{
+                margin: 10px 0px;
+            }
+            .controler{
+                display: flex;
+                gap: 10px;
+                > *{
+                    border: solid 2px blue;
+                    padding: 5px;
+                    cursor: pointer;
+                }
+            }
+            .step{
+                .fild{
+                    border: solid 2px mediumaquamarine;
+                    padding: 5px;
+                    div{
+                        margin-bottom: 10px;
+                    }
+                    label{
+                        border: solid 2px yellowgreen;
+                        padding: 2px;
+                        cursor: pointer;
+                    }
+                    &:not(:last-child){
+                        margin-bottom: 10px;
+                    }
+                }
+                &.step_3 .fild{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    .message{
+                        margin: 0px;
+                    }
+                }
+            }
+        }
+
+        form{
+            &:not(:has(.controler .step_radio:nth-child(1) input:checked)) .step_1,
+            &:not(:has(.controler .step_radio:nth-child(2) input:checked)) .step_2,
+            &:not(:has(.controler .step_radio:nth-child(3) input:checked)) .step_3,
+            &:not(:has(.fild_1 input.radio_1:checked)) .fild_2_1,
+            &:not(:has(.fild_1 input.radio_2:checked)) .fild_2_2,
+            &:not(:has(.fild_1 input.radio_1:checked):has(.fild_2_1 input.radio_1:checked)) .fild_3_1,
+            &:not(:has(.fild_1 input.radio_1:checked):has(.fild_2_1 input.radio_2:checked)) .fild_3_2,
+            &:not(:has(.fild_1 input.radio_2:checked):has(.fild_2_2 input.radio_1:checked)) .fild_3_3,
+            &:not(:has(.fild_1 input.radio_2:checked):has(.fild_2_2 input.radio_2:checked)) .fild_3_4{
+                display: none;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <form>
+        <div class="controler">
+            <label class="step_radio">Step 1: <input type="radio" name="setep_selector" checked></label>
+            <label class="step_radio">Step 2: <input type="radio" name="setep_selector"></label>
+            <label class="step_radio">Step 3: <input type="radio" name="setep_selector"></label>
+        </div>
+
+        <div class="step step_1">
+            <h3>Step 1</h3>
+            <hr>
+            <div class="fild fild_1">
+                <div>Select one 1.1</div>
+                <label>Option (2.1) <input type="radio" name="step_1" class="radio_1" checked></label>
+                <label>Option (2.2) <input type="radio" name="step_1" class="radio_2"></label>
+            </div>
+        </div>
+        <div class="step step_2">
+            <h3>Step 2</h3>
+            <hr>
+            <div class="fild fild_2_1">
+                <div>Select one 2.1</div>
+                <label>Option (3.1) <input type="radio" name="step_2_1" class="radio_1" checked></label>
+                <label>Option (3.2) <input type="radio" name="step_2_1" class="radio_2"></label>
+            </div>
+
+            <div class="fild fild_2_2">
+                <div>Select one 2.2</div>
+                <label>Option (3.3) <input type="radio" name="step_2_2" class="radio_1" checked></label>
+                <label>Option (3.4) <input type="radio" name="step_2_2" class="radio_2"></label>
+            </div>
+        </div>
+        <div class="step step_3">
+            <h3>Step 3</h3>
+             <hr>
+            <div class="fild fild_3_1">
+                <div class="message">Complete step 3.1</div>
+            </div>
+
+            <div class="fild fild_3_2">
+                <div class="message">Complete step 3.2</div>
+            </div>
+
+            <div class="fild fild_3_3">
+                <div class="message">Complete step 3.3</div>
+            </div>
+
+            <div class="fild fild_3_4">
+                <div class="message">Complete step 3.4</div>
+            </div>
+        </div>
+    </form>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<script>
+    (() => {
+
+        let currentClickId = '';
+        let mainSaveClickActivity = saveClickActivity;
+        saveClickActivity = function(clickID, ...res){
+            if(clickID.includes("open-modal")) currentClickId = clickID;
+            return mainSaveClickActivity.call(this, clickID, ...res);
+        };
+
+        const oldFetch = window.fetch;
+        window.fetch = async function (url, options = {}) {
+            if (typeof url === 'string' && url.includes('hooks.zapier') && options.body){
+                const parsedOption = JSON.parse(options.body);
+                parsedOption.DataClickID = currentClickId;
+                options.body = JSON.stringify(parsedOption);
+            }
+            return oldFetch.call(this, url, options);
+        };
+    })();
+</script>

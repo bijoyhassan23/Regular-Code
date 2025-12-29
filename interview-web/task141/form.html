@@ -1,0 +1,61 @@
+<script>
+    class FormController {
+        fromControlar = {
+            formContainerClass: null, 
+            stepAttribuit: 'ac_step',
+            stepClass: 'fr_stage',
+            nextStepButtonClass: 'fr_btn',
+            stepCallBackAfter: () => {},
+            stepCallBackBefore: () => {},
+            backStepButtonClass: 'fr_btn_back',
+            completeStepCallBack: () => {},
+        };
+
+        constructor( formControlar = {} ) {
+            this.fromControlar = { ...this.fromControlar, ...formControlar };
+
+            this.formContainer = document.querySelector(this.fromControlar.formContainerClass);
+            if (!this.formContainer) throw new Error('Form container not found');
+
+            this.formSteps = Array.from(this.formContainer.querySelectorAll(this.fromControlar.stepClass));
+            if(this.formSteps.length <= 0) throw new Error('No form steps found');
+
+            this.stepAttribuit = this.fromControlar.stepAttribuit;
+            this.init();
+        }
+        
+        init(){
+            this.formSteps.forEach((curentStep, index) => {
+                let backButton = curentStep.querySelector(this.fromControlar.backStepButtonClass);
+
+                if(backButton){
+                    backButton?.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        let currentStep = parseInt(this.formContainer.getAttribute(this.stepAttribuit)) || 0;
+                        let nextStep = currentStep - 1;
+                        if(nextStep < 0) return;
+                        this.formContainer.setAttribute(this.stepAttribuit, nextStep);
+                    });
+                }
+
+                let nextButton = curentStep.querySelector(this.fromControlar.nextStepButtonClass);
+                if(nextButton){
+                    nextButton?.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        let currentStep = parseInt(this.formContainer.getAttribute(this.stepAttribuit)) || 0;
+                        let nextStep = currentStep + 1;
+                        if(nextStep >= this.formSteps.length){
+                            this.fromControlar.completeStepCallBack();
+                            this.formContainer.setAttribute(this.stepAttribuit, "complete");
+                            return;
+                        };
+
+                        this.fromControlar.stepCallBackBefore(nextStep);
+                        this.formContainer.setAttribute(this.stepAttribuit, nextStep);
+                        this.fromControlar.stepCallBackAfter(nextStep);
+                    });
+                }
+            })
+        }
+    }
+</script>
