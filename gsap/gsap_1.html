@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+<body>
+    <style>
+        .outer-mouse-div,
+        .inner-mouse-div{
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .outer-mouse-div{
+            width: 40px;
+            height: 40px;
+            z-index: 10;
+            border: solid 2px #0E3D4A;
+        }
+        .inner-mouse-div{
+            width: 5px;
+            height: 5px;
+            background-color: #D4AF37;
+            z-index: 15;
+            border-radius: 50%;
+        }
+
+        .over-size{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+        }
+    </style>
+    <div class="outer-mouse-div"></div>
+    <div class="inner-mouse-div"></div>
+    <div class="over-size">This text is over size</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        let outerWidth = document.querySelector('.outer-mouse-div').getBoundingClientRect().width;
+        let innerWidth = document.querySelector('.inner-mouse-div').getBoundingClientRect().width;
+        innerWidth = (outerWidth / 2) + (innerWidth / 2);
+        window.addEventListener("mousemove", function(event){
+            gsap.to(".outer-mouse-div", {
+                x: event.clientX - outerWidth,
+                y: event.clientY - outerWidth,
+                duration: 0.5,
+                delay: 0.05
+            })
+            gsap.to(".inner-mouse-div", {
+                x: event.clientX - innerWidth,
+                y: event.clientY - innerWidth,
+                duration: 0.5
+            })
+        })
+
+        document.querySelector('.over-size').addEventListener('mouseover', function(){
+            gsap.to(".outer-mouse-div", {
+                scale: 2,
+                backgroundColor: "red",
+                opacity: 0.3
+            })
+        })
+
+        document.querySelector('.over-size').addEventListener('mouseout', function(){
+            gsap.to(".outer-mouse-div", {
+                scale: 1,
+                backgroundColor: "transparent",
+                opacity: 1
+
+            })
+        })
+    </script>
+</body>
+</html>
