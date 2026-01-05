@@ -1,0 +1,163 @@
+<script>
+	const section = document.querySelector(".animated-section"); // target specific section
+
+if (section) {
+    const headings = section.querySelectorAll(".elementor-heading-title"); // only inside this section
+
+    headings.forEach(heading => {
+        heading.style.transition = "transform 0.2s ease-out"; // smooth transition
+        heading.style.transformOrigin = "center"; // scale & rotate from center
+    });
+
+    function animateHeadingsOnScroll() {
+        // Desktop + Tablet (>= 768px)
+        if (window.innerWidth < 768) return; // skip mobile phones
+
+        const windowHeight = window.innerHeight;
+        const startOffset = windowHeight; 
+        const endOffset = 0;              
+
+        headings.forEach(heading => {
+            const rect = heading.getBoundingClientRect();
+
+            // Scroll progress
+            let progress = (startOffset - rect.top) / (startOffset - endOffset);
+            progress = Math.max(0, Math.min(1, progress)); // clamp 0-1
+            progress = 1 - progress; // reverse for ulta effect
+
+            // Rotate Y — deeper rotation
+            const rotateY = - 60 * progress; 
+
+            // Scale down — dramatic
+            const scale = 1 - 0.55 * progress; 
+
+            // Slide from right
+            const translateX = 400 * progress; 
+
+            heading.style.transform = `perspective(800px) rotateY(${rotateY}deg) scale(${scale}) translateX(${translateX}px)`;
+        });
+    }
+
+    window.addEventListener("scroll", animateHeadingsOnScroll);
+    window.dispatchEvent(new Event("scroll"));
+}
+</script>
+
+
+
+<script>
+class PerspectiveRotateAnimation {
+    constructor(selector) {
+        this.el = document.querySelector(selector);
+        if (!this.el) return;
+
+        this.from = -30;
+        this.to = 0;
+        this.progress = 0;
+        this.isPlaying = false;
+
+        this.onScroll = this.onScroll.bind(this);
+
+        this.applyTransform(0);
+        this.observeMutations();
+        this.observeVisibility();
+    }
+
+    applyTransform(progress) {
+        const rotateY = this.from + (this.to - this.from) * progress;
+        this.el.style.transform =
+            `perspective(800px) rotateY(${rotateY}deg) rotate(0deg)`;
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        window.addEventListener('scroll', this.onScroll, { passive: true });
+    }
+
+    pause() {
+        this.isPlaying = false;
+        window.removeEventListener('scroll', this.onScroll);
+    }
+
+    onScroll() {
+        if (!this.isPlaying) return;
+
+        const rect = this.el.getBoundingClientRect();
+        const vh = window.innerHeight;
+
+        const total = vh + rect.height;
+        const visible = vh - rect.top;
+
+        let progress = visible / total;
+        progress = Math.min(Math.max(progress, 0), 1);
+
+        this.progress = progress;
+        this.applyTransform(progress);
+    }
+
+    observeMutations() {
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.attributeName === 'data-animate') {
+                    const value = this.el.getAttribute('data-animate');
+                    value === 'true' ? this.play() : this.pause();
+                }
+            });
+        });
+
+        observer.observe(this.el, {
+            attributes: true,
+            attributeFilter: ['data-animate']
+        });
+    }
+
+    observeVisibility() {
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    this.el.setAttribute('data-animate', 'true');
+                } else {
+                    this.el.setAttribute('data-animate', 'false');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        io.observe(this.el);
+    }
+}
+
+new PerspectiveRotateAnimation('.animated-section');
+</script>
+
+
+
+ <script>
+	function addScroolAnim(element){
+		let viewPortCalculate = Math.floor(window.innerHeight * 0.3);
+
+		const animation = element.animate([
+			{ transform: 'perspective(800px) rotateY(-60deg) rotate(0deg)' },
+			{ transform: 'perspective(800px) rotateY(0deg) rotate(0deg)' }
+		], {
+			duration: viewPortCalculate,
+			easing: 'linear',
+		});
+		animation.pause();
+		
+		window.addEventListener('scroll', () => {
+			let elementorDstanceFromTop = element?.getBoundingClientRect()?.y;
+			if(elementorDstanceFromTop > (window.innerHeight - viewPortCalculate) &&  elementorDstanceFromTop <= window.innerHeight){
+				animation.currentTime = window.innerHeight - elementorDstanceFromTop;
+			}else{
+				animation.currentTime = viewPortCalculate;
+			}
+		})
+	}
+
+	const heading = document.querySelectorAll('.animated-section');
+
+	heading.forEach(addScroolAnim);
+</script>

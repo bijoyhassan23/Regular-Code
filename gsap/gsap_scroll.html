@@ -1,0 +1,62 @@
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+setTimeout(function(){
+    gsap.fromTo(
+        "#scroll-anim-header",
+        {
+                rotationY: -60,
+                rotation: 0,
+                transformPerspective: 800,
+                transformOrigin: "center center"
+        },
+        {
+            rotationY: 0,
+            rotation: 0,
+            ease: "none",
+            scrollTrigger: {
+                    trigger: "#scroll-anim-header",
+                    start: "top 90%",
+                    end: "top 50%",
+                    scrub: true,
+                    markers: true
+            }
+        }
+    );
+}, 1000);
+</script>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+setTimeout(() => {
+    gsap.utils.toArray(".animated-section").forEach((el) => {
+        gsap.fromTo(
+            el,
+            {
+                rotationY: -60,
+                rotation: 0,
+                transformPerspective: 800,
+                transformOrigin: "center center"
+            },
+            {
+                rotationY: 0,
+                rotation: 0,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: el,
+                    start: "top 96%",
+                    end: "top 50%",
+                    scrub: true,
+                    markers: true
+                }
+            }
+        );
+
+    });
+
+}, 1000);
+</script>

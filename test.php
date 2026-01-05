@@ -1,0 +1,4 @@
+<?php
+array (
+  'customer' => 'a:28:{s:2:"id";s:1:"1";s:13:"date_modified";s:25:"2025-12-22T09:34:39+00:00";s:10:"first_name";s:4:"test";s:9:"last_name";s:4:"test";s:7:"company";s:0:"";s:5:"phone";s:13:"+880147852369";s:5:"email";s:24:"dev-email@wpengine.local";s:7:"address";s:4:"test";s:9:"address_1";s:4:"test";s:9:"address_2";s:0:"";s:4:"city";s:4:"test";s:5:"state";s:5:"BD-13";s:8:"postcode";s:0:"";s:7:"country";s:2:"BD";s:19:"shipping_first_name";s:4:"test";s:18:"shipping_last_name";s:4:"test";s:16:"shipping_company";s:0:"";s:14:"shipping_phone";s:13:"+880147852369";s:16:"shipping_address";s:4:"test";s:18:"shipping_address_1";s:4:"test";s:18:"shipping_address_2";s:0:"";s:13:"shipping_city";s:4:"test";s:14:"shipping_state";s:5:"BD-13";s:17:"shipping_postcode";s:0:"";s:16:"shipping_country";s:2:"BD";s:13:"is_vat_exempt";s:0:"";s:19:"calculated_shipping";s:0:"";s:9:"meta_data";a:0:{}}',
+)
