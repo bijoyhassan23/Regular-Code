@@ -1,0 +1,177 @@
+
+<style>
+    .map-wrapper {
+  display: flex;
+  width: 100%;
+  height: 500px;
+}
+
+#map {
+  flex: 1;
+}
+
+.location-list {
+  width: 320px;
+  background: #2f3640;
+  color: #fff;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.location-item {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+}
+
+.location-item.active {
+  background: rgba(255,255,255,.1);
+}
+
+</style>
+
+<div id="map" style="width:100%; height:400px;"></div>
+<div class="map-wrapper">
+  <div class="location-list" id="locationList"></div>
+  <div id="map"></div>
+</div>
+
+ <script>
+//   const locations = [
+//     { lat: 37.7749, lng: -122.4194, title: 'Chillout Boat', content: 'Chillout Boat' },
+//     { lat: 34.0522, lng: -118.2437, title: 'BBQ & Swim', content: 'BBQ & Swim' },
+//     { lat: 31.0522, lng: -114.2437, title: 'BBQ & Swim', content: 'BBQ & Swim' },
+//   ];
+
+//   function initMap() {
+//     const mapStyles = [
+//       {
+//         featureType: 'all',
+//         elementType: 'all',
+        
+//         stylers: [{ saturation: -100 }]
+//       }
+//     ];
+
+//     const map = new google.maps.Map(document.getElementById('map'), {
+//       center: { lat: 37.7749, lng: -122.4194 },
+//       zoom: 5,
+//       styles: mapStyles
+//     });
+
+//     locations.forEach((location, index) => {
+//       const marker = new google.maps.Marker({
+//         position: { lat: location.lat, lng: location.lng },
+//         map,
+//         title: location.title,
+//         label: {
+//           text: String(index + 1),
+//           color: '#fff',
+//           fontWeight: 'bold'
+//         },
+//         icon: {
+//           url: 'https://new.barcelonaboatparty.com/wp-content/uploads/2023/11/Numbersa.png',
+//           scaledSize: new google.maps.Size(40, 40)
+//         }
+//       });
+
+//       const infowindow = new google.maps.InfoWindow({
+//         content: `<strong>${location.title}</strong>`
+//       });
+
+//       // Open info window on marker click
+//       marker.addListener('click', () => {
+//         infowindow.open(map, marker);
+//       });
+//     });
+//   }
+  
+</script>
+
+
+
+<script>
+const locations = [
+  {
+    title: "St Thomas Choir School",
+    lat: 40.7681,
+    lng: -73.9819,
+    address: "Manhattan, NY"
+  },
+  {
+    title: "The Speyer Legacy School",
+    lat: 40.7812,
+    lng: -73.9735,
+    address: "Upper West Side, NY"
+  },
+  {
+    title: "Ethical Culture Fieldston",
+    lat: 40.8075,
+    lng: -73.9636,
+    address: "New York, NY"
+  }
+];
+
+let map;
+let markers = [];
+let activeInfoWindow = null;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 40.776, lng: -73.977 },
+    zoom: 13,
+    styles: [{ stylers: [{ saturation: -100 }] }]
+  });
+
+  const listContainer = document.getElementById("locationList");
+
+  locations.forEach((loc, index) => {
+    // 👉 Create list item
+    const item = document.createElement("div");
+    item.className = "location-item";
+    item.innerHTML = `<strong>${loc.title}</strong><br>${loc.address}`;
+    listContainer.appendChild(item);
+
+    // 👉 Create marker
+    const marker = new google.maps.Marker({
+      position: { lat: loc.lat, lng: loc.lng },
+      map,
+      icon: {
+        url: "https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png",
+        scaledSize: new google.maps.Size(40, 40)
+      }
+    });
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `<strong>${loc.title}</strong><br>${loc.address}`
+    });
+
+    markers.push({ marker, item, infoWindow });
+
+    // 👉 Shared select function
+    function selectLocation() {
+      markers.forEach(m => {
+        m.item.classList.remove("active");
+        m.infoWindow.close();
+      });
+
+      item.classList.add("active");
+      map.panTo(marker.getPosition());
+      map.setZoom(15);
+      infoWindow.open(map, marker);
+    }
+
+    // Click list → select marker
+    item.addEventListener("click", selectLocation);
+
+    // Click marker → select list
+    marker.addListener("click", selectLocation);
+  });
+}
+</script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBj5d5HIe1cMxkfb8x9Sz-MmT0QIGWLLk&callback=initMap"
+  async
+  defer
+></script>
