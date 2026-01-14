@@ -1,0 +1,27 @@
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+gsap.utils.toArray(".project-section").forEach((el) => {
+    gsap.fromTo(
+        el,
+        {
+            backgroundSize: window.innerWidth
+        },
+        {
+            backgroundSize: window.innerWidth * 1.5,
+            ease: "none",
+            scrollTrigger: {
+                trigger: el,
+                start: "top 100%",
+                end: "top -100%",
+                scrub: true,
+                markers: true
+            }
+        }
+    );
+});
+</script>
