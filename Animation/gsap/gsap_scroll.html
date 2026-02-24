@@ -60,3 +60,25 @@ setTimeout(() => {
 
 }, 1000);
 </script>
+
+
+
+<style>
+    body:has([data-framer-name="Nav Modal"]){
+        overflow: hidden;
+    }
+
+    div:has(> #cs-text) > *:not(#cs-text){
+        order: 3;
+    }
+
+    #cs-text{
+        order: 2;
+    }
+
+    @media (max-width: 809px) {
+        div:has(> #cs-text) > *:not(#cs-text):first-child{
+            order: 1;
+        }
+    }
+</style>

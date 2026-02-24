@@ -1,0 +1,226 @@
+<script>
+     ////////////////////////////////////////////////////////////rakib////////////////////////////////////////////////////////////////////////////
+
+    // socaial login intigration
+    /* ---------- Config ---------- */
+    const getFormContainer = document.querySelector(".webinar_registration_for_masterclass");
+    const BASE_URL = "https://qa-ik-auth-service.interviewkickstart.com";
+    const LOGIN_EXPIRY_DAYS = 90;
+    const crossSubDomain = ".wpcomstaging.com";
+    const sameSite = "none";
+
+    function setCookie(name, value, days) {
+        const maxAge = days * 24 * 60 * 60;
+        document.cookie = `${name}=${value}; max-age=${maxAge}; path=/; domain=${crossSubDomain}; secure; samesite=${sameSite}`;
+    }
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function deleteCookie(name) {
+        document.cookie = `${name}=; max-age=0; path=/; domain=${crossSubDomain}; secure; samesite=${sameSite}`;
+    }
+
+    /* ---------- Session helpers ---------- */
+    const setLoginSession = (user) => {
+        const expiry = Date.now() + LOGIN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        setCookie("sso_logged_in", "true", LOGIN_EXPIRY_DAYS);
+        setCookie("sso_expiry", expiry, LOGIN_EXPIRY_DAYS);
+        setCookie("sso_name", user.name || "", LOGIN_EXPIRY_DAYS);
+        setCookie("sso_email", user.email || "", LOGIN_EXPIRY_DAYS);
+    };
+
+    const isSessionValid = () => {
+        const loggedIn = getCookie("sso_logged_in") === "true";
+        const expiry = Number(getCookie("sso_expiry"));
+        return loggedIn && expiry && Date.now() < expiry;
+    };
+
+    const clearSession = () => {
+        deleteCookie("sso_logged_in");
+        deleteCookie("sso_expiry");
+        deleteCookie("sso_name");
+        deleteCookie("sso_email");
+    };
+
+			
+			
+    /* ---------- Initiate SSO ---------- */
+    const initiateSSO = async (provider) => {
+        try {
+            const redirect_uri = window.location.href;
+
+            const res = await fetch(`${BASE_URL}/auth/sso/${provider}/initiate/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ redirect_uri }),
+            });
+
+            if (!res.ok) throw new Error(`SSO failed: ${res.status}`);
+
+            const data = await res.json();
+
+            if (data.authorization_url) {
+                // Redirect to SSO provider
+                window.location.href = data.authorization_url;
+            }else{
+                throw new Error("No authorization URL returned");
+            }
+
+        } catch (err) {
+            console.error("SSO error:", err);
+        }
+    };
+
+    //social login integration end
+
+
+
+    getFormContainer?.querySelector(".step_2_btn")?.addEventListener("click", () => {
+
+        const data = {
+            name: getFormContainer?.querySelector("#Full-Name-Masterclass")?.value || "",
+            email: getFormContainer?.querySelector("#Email-Address-Masterclass")?.value || "",
+            phone: getFormContainer?.querySelector("#webinar_pnumber-Masterclass")?.value || "",
+            experience: getFormContainer?.querySelector("#gql_experience-Masterclass")?.value || "",
+            domain: getFormContainer?.querySelector("#gql_domain_role-Masterclass")?.value || "",
+            goal: getFormContainer?.querySelector("#gql_goal_fit-Masterclass")?.value || "",
+            interview: getFormContainer?.querySelector("#gql_int_select-Masterclass")?.value || ""
+        };
+
+        setCookie("mc_user_data", JSON.stringify(data), LOGIN_EXPIRY_DAYS);
+    });
+
+    /* ---------- On page load ---------- */
+
+    let user = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- Parse URL hash after redirect from SSO ---
+        const hash = new URLSearchParams(window.location.hash.substring(1));
+
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+
+        const name = hash.get("full_name") || "";
+        const email = hash.get("email") || "";
+
+        if (accessToken && refreshToken) {
+            // store tokens in cookies
+            setCookie("refresh_token", refreshToken, LOGIN_EXPIRY_DAYS);
+            setCookie("access_token", accessToken, 15); // 15 minutes expiry
+               
+
+            // store session + user info
+            setLoginSession({ name, email });
+
+            // clean URL (remove hash)
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+        }
+
+        // --- Auto-fill forms and hide SSO buttons ---
+        if (isSessionValid()) {
+            const storedName = getCookie("sso_name");
+            const storedEmail = getCookie("sso_email");
+
+            const nameInput = getFormContainer?.querySelector("#Full-Name-Masterclass");
+            const emailInput = getFormContainer?.querySelector("#Email-Address-Masterclass");
+
+            if (storedName && nameInput) {
+                nameInput.value = storedName.replace(/[._-]/g, "");
+                nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+
+            if (storedEmail && emailInput) {
+                emailInput.value = storedEmail;
+                emailInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+
+            // hide SSO buttons
+            const ssoButtons = document.querySelector("#sso-buttons");
+            if (ssoButtons) {
+                ssoButtons.style.display = "none";
+            }
+            // Hide forms
+            const hideFormsInterval = setInterval(() => {
+                const form1 = getFormContainer?.querySelector(".fr_stage_1 .form_body");
+
+                if (form1) {
+                    form1.style.display = "none";
+                    clearInterval(hideFormsInterval);
+                }
+            }, 100);
+
+
+            // Create welcome UI
+            const welcome = document.createElement("div");
+            welcome.className = "welcome_back";
+            welcome.innerHTML = `<h3>Welcome back, ${storedName} </h3>`;
+            getFormContainer?.querySelector(".fr_stage_1")?.prepend(welcome);
+
+        } else {
+            clearSession(); // session expired
+        }
+
+    });
+
+    let autoSubmitted = false;
+  document.addEventListener("click", e => {
+
+        const cookieData = getCookie("mc_user_data");
+        if (!cookieData) return;
+
+        try {
+            user = JSON.parse(cookieData);
+        } catch {
+            console.warn("Invalid mc_user_data cookie");
+            return;
+        }
+
+        const ssoProvider =
+            e.target.closest(".google_btn") && "google" ||
+            e.target.closest(".meta_btn") && "meta" ||
+            e.target.closest(".linkedin_btn") && "linkedin";
+
+        if (ssoProvider) {
+            initiateSSO(ssoProvider);
+            return;
+        }
+
+
+        if (!e.target.closest(".step_2_btn") || autoSubmitted) return;
+        if (!user) return;
+        autoSubmitted = true;
+
+        // Auto-fill stage
+
+        const waitForStep2 = setInterval(() => {
+            const step2 = getFormContainer?.querySelector("#gql_experience-Masterclass");
+
+            if (!step2) return;
+
+            clearInterval(waitForStep2);
+            const fillInput = (selector, value) => {
+                const el = getFormContainer?.querySelector(selector);
+                if (el && value !== undefined) {
+                    el.value = value;
+                    el.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+            };
+
+            fillInput("#Full-Name-Masterclass", user.name);
+            fillInput("#Email-Address-Masterclass", user.email);
+            fillInput("#webinar_pnumber-Masterclass", user.phone);
+            fillInput("#gql_experience-Masterclass", user.experience);
+            fillInput("#gql_domain_role-Masterclass", user.domain);
+            fillInput("#gql_goal_fit-Masterclass", user.goal);
+            fillInput("#gql_int_select-Masterclass", user.interview);
+
+            // Trigger submit (adjust if you use custom submit)
+            getFormContainer?.querySelector(".step_2_btn")?.click();
+
+        }, 100);
+    });
+</script>

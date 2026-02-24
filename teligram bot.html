@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Telegram Test</title>
+</head>
+<body>
+
+<h2>Send Test Message</h2>
+<button onclick="sendMessage()">Send Telegram Message</button>
+
+<script>
+function sendMessage() {
+
+  const token = "8513136375:AAHO3dWrzHSXem-vt-rW1aW0q2Pk0agYug4";
+  const chatId = "5427112468";
+
+  const text = "🚀 Test message from browser JS";
+
+  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Success:", data);
+    alert("Message Sent!");
+  })
+  .catch(error => {
+    console.error("Error:", error);
+    alert("Error sending message");
+  });
+}
+</script>
+
+</body>
+</html>

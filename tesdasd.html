@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div class="loader" id="loader">
+  <div>[<span id="percent">000</span>]</div>
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+</div>
+
+<!-- Example Images -->
+<img src="https://picsum.photos/800/400?1">
+<img src="https://picsum.photos/800/400?2">
+<img src="https://picsum.photos/800/400?3">
+
+<script>
+const loader = document.getElementById("loader");
+const progressBar = document.getElementById("progressBar");
+const percentText = document.getElementById("percent");
+
+const images = document.images;
+const totalAssets = images.length;
+
+let loadedAssets = 0;
+
+if (totalAssets === 0) {
+  loader.classList.add("hide");
+}
+
+for (let i = 0; i < totalAssets; i++) {
+  if (images[i].complete) {
+    assetLoaded();
+  } else {
+    images[i].addEventListener("load", assetLoaded);
+    images[i].addEventListener("error", assetLoaded);
+  }
+}
+
+function assetLoaded() {
+  loadedAssets++;
+
+  let percent = Math.floor((loadedAssets / totalAssets) * 100);
+
+  // 🔥 Convert to 3 digit format
+  let formatted = percent.toString().padStart(3, '0');
+
+  progressBar.style.width = percent + "%";
+  percentText.innerText = formatted;
+
+  if (loadedAssets === totalAssets) {
+    setTimeout(() => {
+      loader.classList.add("hide");
+    }, 300);
+  }
+}
+</script>
+</body>
+</html>

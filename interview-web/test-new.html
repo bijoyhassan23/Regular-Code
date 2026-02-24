@@ -1,0 +1,175 @@
+<script>
+    if(getCookie("sso_logged_in") == "true") document.querySelector(".side_container").setAttribute("loggin-status", true);
+    function socialAuthSetup(){
+        getFormContainer = document.querySelector(".webinar_registration_for_masterclass");
+        const Config = {
+            BASE_URL: "https://qa-ik-auth-service.interviewkickstart.com",
+            LOGIN_EXPIRY_DAYS: 90,
+            crossSubDomain: ".wpcomstaging.com", // Adjust to your domain
+            sameSite: "none" // Adjust as needed: Lax, Strict, None
+        };
+
+        function setCookie(name, value, days = Config.LOGIN_EXPIRY_DAYS) {
+            const maxAge = days * 24 * 60 * 60;
+            document.cookie = `${name}=${value}; max-age=${maxAge}; path=/; domain=${Config.crossSubDomain}; secure; samesite=${Config.sameSite}`;
+        }
+
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=; max-age=0; path=/; domain=${Config.crossSubDomain}; secure; samesite=${Config.sameSite}`;
+        }
+
+        function clearSession() {
+            deleteCookie("sso_logged_in");
+            deleteCookie("sso_name");
+            deleteCookie("sso_email");
+            deleteCookie("access_token");
+            deleteCookie("refresh_token");
+        }
+
+        /* ---------- Initiate SSO ---------- */
+        const initiateSSO = async (provider) => {
+            try {
+                const redirect_uri = window.location.href;
+
+                const res = await fetch(`${Config.BASE_URL}/auth/sso/${provider}/initiate/`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ redirect_uri }),
+                });
+
+                if (!res.ok) throw new Error(`SSO failed: ${res.status}`);
+
+                const data = await res.json();
+
+                if (data.authorization_url) {
+                    // Redirect to SSO provider
+                    window.location.href = data.authorization_url;
+                }else{
+                    throw new Error("No authorization URL returned");
+                }
+
+            } catch (err) {
+                console.error("SSO error:", err);
+            }
+        };
+
+        const ssoButtons = {
+            google : document.querySelectorAll(".google_btn"),
+            meta : document.querySelectorAll(".meta_btn"),
+            linkedin : document.querySelectorAll(".linkedin_btn"),
+            // apple : document.querySelectorAll(".apple_btn")
+        }
+
+        for (let provider in ssoButtons) {
+            button.addEventListener("click", (e) => {
+            ssoButtons[provider].forEach(button => {
+                    e.preventDefault();
+                    document.querySelector(".side_container").setAttribute("loading_status", true);
+                    initiateSSO(provider);
+                });
+            });
+        }
+
+        function firstSignUpSessionCheck() {
+            const hash = new URLSearchParams(window.location.hash.substring(1));
+
+            const accessToken = hash.get("access_token");
+            const refreshToken = hash.get("refresh_token");
+
+            if (accessToken && refreshToken) {
+                // store tokens in cookies
+                setCookie("refresh_token", refreshToken);
+                setCookie("access_token", accessToken, 15); // 15 minutes expiry
+                
+                const name = hash.get("full_name") || "";
+                const email = hash.get("email") || "";
+                
+                // store session + user info
+                if(!(name && email)) return;
+                setCookie("sso_logged_in", "true");
+                setCookie("sso_name", name || "");
+                setCookie("sso_email", email || "");
+                fillFildFromCookie();
+            }else{
+                const ssoLoggedIn = getCookie("sso_logged_in") == "true";
+                const ssoName = getCookie("sso_name");
+                const ssoEmail = getCookie("sso_email");
+                if(ssoLoggedIn && ssoName && ssoEmail){
+                    document.querySelector(".side_container").setAttribute("loggin-status", true);
+                    document.querySelectorAll(".user_name").forEach(el => el.textContent = ssoName.replace(/[._-]/g, ""));
+                }else{
+                    document.querySelector(".side_container").setAttribute("loggin-status", false);
+                }
+            }
+        }
+
+        firstSignUpSessionCheck();
+
+        function fillFildFromCookie() {
+            const ssoName = getCookie("sso_name");
+            const ssoEmail = getCookie("sso_email");
+            if(ssoName) getFormContainer.querySelector("#Full-Name-Masterclass").value = ssoName.replace(/[._-]/g, "");
+            if(ssoEmail) getFormContainer.querySelector("#Email-Address-Masterclass").value = ssoEmail;
+            if(!(ssoName && ssoEmail)) return;
+            document.querySelector(".side_container").setAttribute("loading_status", true);
+            const sendForFirstStep = setInterval(() => {
+                if(document.querySelector('[name="masterclass_slot"]:checked')?.getAttribute("data-invitee_starttime")){
+                    document.querySelector(".side_container").setAttribute("loading_status", false);
+                    getFormContainer.querySelector(".step_1_btn").click();
+                    clearInterval(sendForFirstStep);
+                }
+            }, 50);
+            const fromData = getCookie("mc_user_data");
+            if(fromData){
+                try{
+                    const parsedData = JSON.parse(fromData);
+                    getFormContainer.querySelector("#webinar_pnumber-Masterclass").value = parsedData.phone || "";
+                    getFormContainer.querySelector("#gql_experience-Masterclass").value = parsedData.experience || "";
+                    getFormContainer.querySelector("#gql_domain_role-Masterclass").value = parsedData.domain || "";
+                    getFormContainer.querySelector("#gql_goal_fit-Masterclass").value = parsedData.goal || "";
+                    getFormContainer.querySelector("#gql_int_select-Masterclass").value = parsedData.interview || "";
+
+                    if(parsedData.phone && parsedData.experience && parsedData.domain && parsedData.goal){
+                        document.querySelector(".side_container").setAttribute("loading_status", true);
+                        let sendForSecondStep = setInterval(() => {
+                            if(document.querySelector(".webinar_registration_for_masterclass").getAttribute("ac_step") != '1'){
+                                getFormContainer.querySelector(".step_2_btn").click();
+                                document.querySelector(".side_container").setAttribute("loading_status", false);
+                                clearInterval(sendForSecondStep);
+                            }
+                        }, 200);
+
+                    }
+                } catch (error) {
+                    console.error("Error parsing mc_user_data cookie:", error);
+                }
+            }
+        }
+
+        function setSecondStepCookie(){
+            const data = {
+                name: getFormContainer?.querySelector("#Full-Name-Masterclass")?.value || "",
+                email: getFormContainer?.querySelector("#Email-Address-Masterclass")?.value || "",
+                phone: getFormContainer?.querySelector("#webinar_pnumber-Masterclass")?.value || "",
+                experience: getFormContainer?.querySelector("#gql_experience-Masterclass")?.value || "",
+                domain: getFormContainer?.querySelector("#gql_domain_role-Masterclass")?.value || "",
+                goal: getFormContainer?.querySelector("#gql_goal_fit-Masterclass")?.value || "",
+                interview: getFormContainer?.querySelector("#gql_int_select-Masterclass")?.value || ""
+            };
+
+            setCookie("mc_user_data", JSON.stringify(data));
+        }
+
+        getFormContainer.querySelector(".step_2_btn").addEventListener("click", setSecondStepCookie);
+        document.querySelector(".reserved-btn").addEventListener("click", fillFildFromCookie);
+        document.querySelector(".sign-diffrent-acc").addEventListener("click", function(){
+            clearSession();
+            document.querySelector(".side_container").setAttribute("loggin-status", false);
+        });
+    }
+</script>

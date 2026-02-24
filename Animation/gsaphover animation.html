@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>GSAP Letter Hover Effect</title>
+
+<!-- GSAP -->
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+
+<style>
+  body {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f0f0f;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .hover-text {
+    font-size: 64px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    overflow: hidden;
+  }
+
+  .char {
+    position: relative;
+    display: inline-block;
+  }
+
+  .char span {
+    display: block;
+    line-height: 1;
+  }
+
+  .char .top {
+    transform: translateY(0%);
+  }
+
+  .char .bottom {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translateY(100%);
+  }
+</style>
+</head>
+
+<body>
+
+<div text-slid-up=".hover-text">
+    <h1 class="hover-text">HOVER ME</h1><br>
+    <h1 class="hover-text">HOVER ME</h1><br>
+    <h1 class="hover-text">HOVER ME</h1><br>
+</div>
+
+<script>
+    document.querySelectorAll("[text-slid-up]").forEach(container => {
+        const texts = container.querySelectorAll(container.getAttribute("text-slid-up"));
+        texts.forEach(text => {
+            const letters = text.textContent.split("");
+            text.innerHTML = "";
+
+            letters.forEach(letter => {
+                const char = document.createElement("span");
+                char.className = "char";
+
+                const top = document.createElement("span");
+                top.className = "top";
+                top.textContent = letter === " " ? "\u00A0" : letter;
+
+                const bottom = document.createElement("span");
+                bottom.className = "bottom";
+                bottom.textContent = letter === " " ? "\u00A0" : letter;
+
+                char.appendChild(top);
+                char.appendChild(bottom);
+                text.appendChild(char);
+            });
+
+            const chars = text.querySelectorAll(".char");
+              text.addEventListener("mouseenter", () => {
+                    gsap.to(chars, {
+                        yPercent: -100,
+                        duration: 0.45,
+                        ease: "power2.out",
+                        stagger: 0.05
+                    });
+                });
+
+                text.addEventListener("mouseleave", () => {
+                    gsap.to(chars, {
+                        yPercent: 0,
+                        duration: 0.45,
+                        ease: "power2.out",
+                        stagger: 0.05
+                    });
+                });
+        });
+    });
+</script>
+
+</body>
+</html>

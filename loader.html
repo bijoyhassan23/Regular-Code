@@ -1,0 +1,45 @@
+<script>
+    if (!window.x) {
+        window.addEventListener("load", () => {
+
+            const images = document.images;
+            const totalAssets = images.length;
+
+            // ✅ If no images
+            if (totalAssets === 0) {
+                console.log("Loading: 100%");
+                console.log("loader hide");
+                return;
+            }
+
+            let loadedAssets = 0;
+
+            for (let i = 0; i < totalAssets; i++) {
+                if (images[i].complete) {
+                    assetLoaded();
+                } else {
+                    images[i].addEventListener("load", assetLoaded);
+                    images[i].addEventListener("error", assetLoaded);
+                }
+            }
+
+            function assetLoaded() {
+                loadedAssets++;
+
+                let percent = Math.floor((loadedAssets / totalAssets) * 100);
+                let formatted = percent.toString().padStart(3, '0');
+
+                console.log(`Loading: ${formatted}%`);
+
+                if (loadedAssets === totalAssets) {
+                    setTimeout(() => {
+                        console.log('loader hide');
+                    }, 300);
+                }
+            }
+
+        });
+
+        window.x = 10;
+    }
+</script>
