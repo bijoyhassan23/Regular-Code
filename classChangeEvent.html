@@ -5,33 +5,37 @@
     }
 </style>
 <script>
-    document.addEventListener("DOMContentLoaded", function(){
-        const targets = document.querySelectorAll(".slide_car .swiper-wrapper .swiper-slide");
-        function setHeight(target) {
-            console.log("Class changed on target:", target);
-            let height = target.querySelector('div').clientHeight;
-            targets.forEach(el => el.style.height = height + "px");
-        }
+    if(!window.x){
+        window.x = true;
+        document.addEventListener("DOMContentLoaded", function(){
+            const targets = document.querySelectorAll(".slide_car .swiper-wrapper .swiper-slide");
+            function setHeight(target) {
+                console.log("Class changed on target:", target);
+                let height = target.querySelector('div').clientHeight;
+                targets.forEach(el => el.style.height = height + "px");
+            }
 
-        // Create observer
-        const observer = new MutationObserver(function(mutationsList) {
-            mutationsList.forEach(function(mutation) {
-                if (mutation.type === "attributes" && mutation.attributeName === "class") {
-                    const target = mutation.target;
-                    if (target.classList.contains("swiper-slide-active") && !target.classList.contains("swiper-slide-duplicate-active")) {
-                        setHeight(target);
+            // Create observer
+            const observer = new MutationObserver(function(mutationsList) {
+                mutationsList.forEach(function(mutation) {
+                    if (mutation.type === "attributes" && mutation.attributeName === "class") {
+                        const target = mutation.target;
+                        if (target.classList.contains("swiper-slide-active") && !target.classList.contains("swiper-slide-duplicate-active")) {
+                            setHeight(target);
+                        }
                     }
-                }
+                });
             });
-        });
 
-        // Start observing
-        targets.forEach(target => {
-            observer.observe(target, {
-                attributes: true,       // watch attributes
-                attributeFilter: ["class"] // only watch class changes
+            // Start observing
+            targets.forEach(target => {
+                observer.observe(target, {
+                    attributes: true,       // watch attributes
+                    attributeFilter: ["class"] // only watch class changes
+                });
             });
+            setHeight(targets[1]);
         });
-        setHeight(targets[1]);
-    });
+    }
+
 </script>
